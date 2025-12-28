@@ -195,3 +195,5 @@ const MinimalTemplate = ({ data, accentColor }) => {
         </div>
     );
 }
+
+export default MinimalTemplate;

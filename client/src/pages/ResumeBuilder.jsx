@@ -4,7 +4,6 @@ import { dummyResumeData } from '../assets/assets'
 import { ArrowLeftIcon, Award, Briefcase, ChevronLeft, ChevronRight, DownloadIcon, EyeIcon, EyeOffIcon, FileText, FolderIcon, GraduationCap, Heart, Languages, Share2Icon, Sparkles, Trophy, User } from 'lucide-react'
 import PersonalInfoForm from '../components/PersonalInfoForm'
 import ResumePreview from '../components/ResumePreview'
-import TemplateSelector from '../components/TemplateSelector'
 import ColorPicker from '../components/ColorPicker'
 import ProfessionalSummaryForm from '../components/ProfessionalSummaryForm'
 import ExperienceForm from '../components/ExperienceForm'
@@ -64,6 +63,7 @@ const ResumeBuilder = () => {
 
   const [activeSectionIndex, setActiveSectionIndex] = useState(0)
   const [removeBackground, setRemoveBackground] = useState(false);
+
 
   const sections = [
     { id: "personal", name: "Personal Info", icon: User },
@@ -169,7 +169,6 @@ const ResumeBuilder = () => {
               <div className="flex justify-between items-center mb-6 border-b border-gray-300 py-1">
 
                 <div className='flex items-center gap-2'>
-                  <TemplateSelector selectedTemplate={resumeData.template} onChange={(template) => setResumeData(prev => ({ ...prev, template }))} />
                   <ColorPicker selectedColor={resumeData.accent_color} onChange={(color) => setResumeData(prev => ({ ...prev, accent_color: color }))} />
                 </div>
 
@@ -219,9 +218,13 @@ const ResumeBuilder = () => {
                 )}
 
               </div>
-              <button onClick={() => { toast.promise(saveResume, { loading: 'Saving...' }) }} className='bg-gradient-to-br from-green-100 to-green-200 ring-green-300 text-green-600 ring hover:ring-green-400 transition-all rounded-md px-6 py-2 mt-6 text-sm'>
-                Save Changes
-              </button>
+
+
+              <div className="sticky bottom-0 bg-white pt-4 pb-2 mt-4 border-t border-gray-100">
+                <button onClick={() => { toast.promise(saveResume, { loading: 'Saving...' }) }} className='w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl py-3 text-sm font-bold shadow-lg shadow-indigo-200 active:scale-[0.98]'>
+                  Save Changes
+                </button>
+              </div>
             </div>
           </div>
 

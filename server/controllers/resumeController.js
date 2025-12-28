@@ -8,10 +8,10 @@ import fs from 'fs';
 export const createResume = async (req, res) => {
     try {
         const userId = req.userId;
-        const { title } = req.body;
+        const { title, template } = req.body;
 
         // create new resume
-        const newResume = await Resume.create({ userId, title })
+        const newResume = await Resume.create({ userId, title, template })
         // return success message
         return res.status(201).json({ message: 'Resume created successfully', resume: newResume })
 
@@ -154,7 +154,28 @@ export const updateResume = async (req, res) => {
             languages: resume.languages || []
         }
 
-        return res.status(200).json({ message: 'Saved successfully', resume: responseResume })
+        return res.status(200).json({ resume: responseResume, message: "Resume updated successfully" })
+
+    } catch (error) {
+        return res.status(400).json({ message: error.message })
+    }
+}
+
+// get all templates
+// GET: /api/resumes/templates
+export const getTemplates = async (req, res) => {
+    try {
+        const templates = [
+            { id: "classic", name: "Classic" },
+            { id: "modern", name: "Modern" },
+            { id: "minimal-image", name: "Minimal Image" },
+            { id: "minimal", name: "Minimal" },
+            { id: "executive", name: "Executive" },
+            { id: "academic", name: "Academic" },
+            { id: "ats", name: "ATS Friendly" },
+            { id: "ats-compact", name: "ATS Compact" },
+        ];
+        return res.status(200).json({ templates })
     } catch (error) {
         return res.status(400).json({ message: error.message })
     }
