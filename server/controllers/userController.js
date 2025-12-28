@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import Resume from "../models/Resume.js";
 import tokenBlacklistService from "../services/tokenBlacklistService.js";
 import mysqlAuthService from "../services/mysqlAuthService.js";
+import Credit from "../models/Credit.js";
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -143,6 +144,18 @@ export const registerUser = async (req, res) => {
             email,
             password: hashedPassword,
             lastLogin: new Date()
+        });
+
+        // Initialize User Credits (Free Plan: 2 credits, 3 months validity)
+        const threeMonthsFromNow = new Date();
+        threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+
+        await Credit.create({
+            userId: newUser._id,
+            planType: 'Free',
+            totalCredits: 2,
+            usedCredits: 0,
+            expiresAt: threeMonthsFromNow
         });
 
         // Generate tokens

@@ -107,6 +107,120 @@ class MySQLAuthService {
             return false;
         }
     }
+
+    /**
+     * Create necessary tables if they don't exist
+     */
+    async initializeTables() {
+        if (!process.env.MYSQL_HOST) return; // Skip if no MySQL config
+
+        try {
+            const pool = getMySQLPool();
+
+            // Create resume_credits table
+            await pool.execute(`
+                CREATE TABLE IF NOT EXISTS resume_credits (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id VARCHAR(255) NOT NULL UNIQUE,
+                    plan_type ENUM('Free', 'Pro', 'Ultimate') DEFAULT 'Free',
+                    total_credits INT DEFAULT 2,
+                    used_credits INT DEFAULT 0,
+                    expires_at DATETIME,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+
+            // Create resume_payments table
+            await pool.execute(`
+                CREATE TABLE IF NOT EXISTS resume_payments (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    order_id VARCHAR(255) NOT NULL,
+                    payment_id VARCHAR(255),
+                    signature VARCHAR(255),
+                    amount INT NOT NULL,
+                    currency VARCHAR(10) DEFAULT 'INR',
+                    status ENUM('created', 'paid', 'failed') DEFAULT 'created',
+                    user_id VARCHAR(255) NOT NULL,
+                    user_email VARCHAR(255) NOT NULL,
+                    plan_type ENUM('Pro', 'Ultimate') NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+
+            console.log('[MySQL] Payment and Credit tables initialized');
+        } catch (error) {
+            console.error('[MySQL] Error initializing tables:', error.message);
+        }
+    }
+
+    // --- Credit Management Methods ---
+
+    async getCredit(userId) {
+        const pool = getMySQLPool();
+        const [rows] = await pool.execute('SELECT * FROM resume_credits WHERE user_id = ?', [userId]);
+        return rows[0] || null;
+    }
+
+    async createCredit(creditData) {
+        const pool = getMySQLPool();
+        const { userId, planType, totalCredits, usedCredits, expiresAt } = creditData;
+        const [result] = await pool.execute(
+            'INSERT INTO resume_credits (user_id, plan_type, total_credits, used_credits, expires_at) VALUES (?, ?, ?, ?, ?)',
+            [userId, planType, totalCredits, usedCredits, expiresAt]
+        );
+        return { ...creditData, id: result.insertId };
+    }
+
+    async updateCredit(userId, updates) {
+        const pool = getMySQLPool();
+        const { planType, totalCredits, usedCredits, expiresAt } = updates;
+
+        // Build dynamic query
+        let query = 'UPDATE resume_credits SET ';
+        const params = [];
+        const fields = [];
+
+        if (planType !== undefined) { fields.push('plan_type = ?'); params.push(planType); }
+        if (totalCredits !== undefined) { fields.push('total_credits = ?'); params.push(totalCredits); }
+        if (usedCredits !== undefined) { fields.push('used_credits = ?'); params.push(usedCredits); }
+        if (expiresAt !== undefined) { fields.push('expires_at = ?'); params.push(expiresAt); }
+
+        if (fields.length === 0) return null;
+
+        query += fields.join(', ') + ' WHERE user_id = ?';
+        params.push(userId);
+
+        await pool.execute(query, params);
+        return await this.getCredit(userId);
+    }
+
+    // --- Payment Management Methods ---
+
+    async createPayment(paymentData) {
+        const pool = getMySQLPool();
+        const { orderId, amount, currency, status, receipt, userId, userEmail, planType } = paymentData;
+
+        await pool.execute(
+            'INSERT INTO resume_payments (order_id, amount, currency, status, user_id, user_email, plan_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [orderId, amount, currency, status || 'created', userId, userEmail, planType]
+        );
+    }
+
+    async getPaymentByOrderId(orderId) {
+        const pool = getMySQLPool();
+        const [rows] = await pool.execute('SELECT * FROM resume_payments WHERE order_id = ?', [orderId]);
+        return rows[0] || null;
+    }
+
+    async updatePaymentStatus(orderId, paymentId, signature, status) {
+        const pool = getMySQLPool();
+        await pool.execute(
+            'UPDATE resume_payments SET payment_id = ?, signature = ?, status = ? WHERE order_id = ?',
+            [paymentId, signature, status, orderId]
+        );
+    }
 }
 
 export default new MySQLAuthService();

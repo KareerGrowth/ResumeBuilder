@@ -1,4 +1,4 @@
-import { LayoutTemplate, LoaderCircleIcon, UploadCloudIcon, XIcon } from 'lucide-react'
+import { LayoutTemplate, LoaderCircleIcon, UploadCloudIcon, XIcon, Crown, Sparkles } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -6,6 +6,7 @@ import api from '../configs/api'
 import toast from 'react-hot-toast'
 import pdfToText from 'react-pdftotext'
 import { dummyResumeData } from '../assets/assets'
+import Pricing from '../components/Pricing'
 
 // Import Template Components
 import ClassicTemplate from '../assets/templates/ClassicTemplate'
@@ -24,11 +25,13 @@ const Dashboard = () => {
   const [templates, setTemplates] = useState([])
   const [showCreateResume, setShowCreateResume] = useState(false)
   const [showUploadResume, setShowUploadResume] = useState(false)
+  const [showPricing, setShowPricing] = useState(false)
   const [title, setTitle] = useState('')
   const [resume, setResume] = useState(null)
   const [selectedTemplate, setSelectedTemplate] = useState('classic')
 
   const [isLoading, setIsLoading] = useState(false)
+  const [credits, setCredits] = useState(null)
 
   const navigate = useNavigate()
 
@@ -53,13 +56,60 @@ const Dashboard = () => {
     }
   }
 
+  const loadCredits = async () => {
+    try {
+      const { data } = await api.get('/api/credits/check', { headers: { Authorization: token } })
+      setCredits(data.credit)
+    } catch (error) {
+      console.log("Error loading credits:", error.message)
+    }
+  }
+
+  const checkCreditsAndAction = (action) => {
+    if (!credits) {
+      action();
+      return;
+    }
+
+    // Check if user has credits
+    if (credits.usedCredits >= credits.totalCredits) {
+      setShowPricing(true);
+      return;
+    }
+
+    // Check expiry
+    if (new Date(credits.expiresAt) < new Date()) {
+      setShowPricing(true);
+      return;
+    }
+
+    action();
+  }
+
   const createResume = async (event) => {
     try {
       event.preventDefault()
-      const { data } = await api.post('/api/resumes/create', { title, template: selectedTemplate }, { headers: { Authorization: token } })
-      setTitle('')
-      setShowCreateResume(false)
-      navigate(`/app/builder/${data.resume._id}`)
+
+      const proceed = async () => {
+        // Deduct credit first (optional: can be moved to backend auto-deduct)
+        try {
+          await api.post('/api/credits/deduct', {}, { headers: { Authorization: token } });
+          const { data } = await api.post('/api/resumes/create', { title, template: selectedTemplate }, { headers: { Authorization: token } })
+          setTitle('')
+          setShowCreateResume(false)
+          navigate(`/app/builder/${data.resume._id}`)
+        } catch (err) {
+          if (err.response?.status === 403) {
+            setShowPricing(true);
+            setShowCreateResume(false);
+          } else {
+            throw err;
+          }
+        }
+      };
+
+      proceed();
+
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message)
     }
@@ -69,6 +119,13 @@ const Dashboard = () => {
     event.preventDefault()
     setIsLoading(true)
     try {
+      // Deduct credit logic handled by userController/creditController or check before
+      // Ideally backend should handle atomic deduct-and-create
+      // For now, we rely on the checkCredits call done before opening modal, 
+      // AND a backend deduct call
+
+      await api.post('/api/credits/deduct', {}, { headers: { Authorization: token } });
+
       const resumeText = await pdfToText(resume)
       const { data } = await api.post('/api/ai/upload-resume', { title, resumeText }, { headers: { Authorization: token } })
       setTitle('')
@@ -76,20 +133,45 @@ const Dashboard = () => {
       setShowUploadResume(false)
       navigate(`/app/builder/${data.resumeId}`)
     } catch (error) {
-      toast.error(error?.response?.data?.message || error.message)
+      if (error.response?.status === 403) {
+        setShowPricing(true);
+        setShowUploadResume(false);
+      } else {
+        toast.error(error?.response?.data?.message || error.message)
+      }
     }
     setIsLoading(false)
   }
 
   useEffect(() => {
     loadTemplates()
+    loadCredits()
   }, [])
 
   return (
     <div>
       <div className='max-w-7xl mx-auto px-4 py-8'>
 
-        <p className='text-3xl font-bold mb-8 text-slate-800'>Welcome back, {user?.name}</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <p className='text-3xl font-bold text-slate-800'>Welcome back, {user?.name}</p>
+            <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
+              <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-medium capitalize">
+                {credits?.planType || 'Free'} Plan
+              </span>
+              <span>•</span>
+              <span>{credits ? (credits.totalCredits - credits.usedCredits) : 0} Credits remaining</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowPricing(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
+          >
+            <Crown className="w-5 h-5" />
+            Upgrade Plan
+          </button>
+        </div>
 
         {/* Upload Resume Banner */}
         <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl p-8 text-white flex flex-col md:flex-row items-center justify-between shadow-lg shadow-indigo-200 mb-12 relative overflow-hidden group">
@@ -98,7 +180,7 @@ const Dashboard = () => {
             <p className="text-indigo-100 max-w-lg">Upload your existing PDF resume and let our AI intelligence instantly format it into a stunning, professional design.</p>
           </div>
           <button
-            onClick={() => setShowUploadResume(true)}
+            onClick={() => checkCreditsAndAction(() => setShowUploadResume(true))}
             className="mt-6 md:mt-0 relative z-10 bg-white text-indigo-600 px-8 py-3 rounded-xl font-bold hover:bg-indigo-50 hover:scale-105 transition-all shadow-md flex items-center gap-2"
           >
             <UploadCloudIcon className='w-5 h-5' />
@@ -131,7 +213,7 @@ const Dashboard = () => {
             return (
               <button
                 key={t.id}
-                onClick={() => { setSelectedTemplate(t.id); setShowCreateResume(true); }}
+                onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.id); setShowCreateResume(true); })}
                 className='h-[24rem] bg-white rounded-xl shadow-md border border-slate-200 hover:shadow-2xl hover:border-indigo-400 hover:-translate-y-1 transition-all duration-300 flex flex-col group cursor-pointer relative overflow-hidden ring-0 ring-indigo-200 hover:ring-4 pb-0'
               >
                 {/* Recommended Badge */}
@@ -182,6 +264,11 @@ const Dashboard = () => {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Resume Title</label>
                   <input autoFocus onChange={(e) => setTitle(e.target.value)} value={title} type="text" placeholder='e.g., Software Engineer @ Google' className='w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all' required />
+                </div>
+
+                <div className="flex items-center gap-2 mb-2 p-3 bg-indigo-50 text-indigo-700 rounded-lg text-sm">
+                  <Sparkles className="w-4 h-4" />
+                  <span>This will cost 1 credit</span>
                 </div>
 
                 <button className='w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200'>Create Resume</button>
@@ -237,6 +324,11 @@ const Dashboard = () => {
                   <input type="file" id='resume-input' accept='.pdf' hidden onChange={(e) => setResume(e.target.files[0])} />
                 </div>
 
+                <div className="flex items-center gap-2 mb-2 p-3 bg-indigo-50 text-indigo-700 rounded-lg text-sm">
+                  <Sparkles className="w-4 h-4" />
+                  <span>This will cost 1 credit</span>
+                </div>
+
                 <button disabled={isLoading} className='w-full py-3 bg-violet-600 text-white font-bold rounded-lg hover:bg-violet-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
                   {isLoading && <LoaderCircleIcon className='animate-spin w-5 h-5 text-white' />}
                   {isLoading ? 'Processing...' : 'Upload & Convert'}
@@ -250,6 +342,9 @@ const Dashboard = () => {
           </form>
         )
         }
+
+        {/* Pricing Modal */}
+        {showPricing && <Pricing onClose={() => setShowPricing(false)} />}
 
       </div>
     </div>

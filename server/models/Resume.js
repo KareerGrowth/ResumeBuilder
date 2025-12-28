@@ -1,7 +1,8 @@
+
 import mongoose from "mongoose";
 
 const ResumeSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    userId: { type: mongoose.Schema.Types.Mixed, required: true },
     title: { type: String, default: 'Untitled Resume' },
     public: { type: Boolean, default: false },
     template: { type: String, default: "classic" },

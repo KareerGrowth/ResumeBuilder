@@ -17,6 +17,7 @@ import HobbiesForm from '../components/HobbiesForm'
 import { useSelector } from 'react-redux'
 import api from '../configs/api'
 import toast from 'react-hot-toast'
+import Pricing from '../components/Pricing'
 
 const ResumeBuilder = () => {
 
@@ -110,10 +111,35 @@ const ResumeBuilder = () => {
     }
   }
 
-  const downloadResume = () => {
-    window.print();
+  const [showPricing, setShowPricing] = useState(false);
+
+  const downloadResume = async () => {
+    try {
+      const { data } = await api.post('/api/credits/deduct', {}, { headers: { Authorization: token } });
+
+      if (data.success) {
+        toast.success("Credit deducted successfully!");
+        window.print();
+
+        // Optional: Update local credit state if you were tracking it
+      } else {
+        toast.error(data.message || "Failed to download");
+      }
+
+    } catch (error) {
+      if (error.response && error.response.status === 403) {
+        setShowPricing(true);
+      } else {
+        toast.error(error?.response?.data?.message || "Something went wrong");
+      }
+    }
   }
 
+  const handlePaymentSuccess = () => {
+    setShowPricing(false);
+    // You might want to update local credit state if you have one, 
+    // or just let the next download attempt succeed (as backend is updated)
+  }
 
   const saveResume = async () => {
     try {
@@ -149,6 +175,8 @@ const ResumeBuilder = () => {
 
   return (
     <div>
+
+      {showPricing && <Pricing onClose={() => setShowPricing(false)} onSuccess={handlePaymentSuccess} />}
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Link to={'/app'} className='inline-flex gap-2 items-center text-slate-500 hover:text-slate-700 transition-all'>
