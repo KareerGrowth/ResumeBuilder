@@ -1,4 +1,4 @@
-import { LayoutTemplate, LoaderCircleIcon, UploadCloudIcon, XIcon, Crown, Sparkles } from 'lucide-react'
+import { LayoutTemplate, LoaderCircleIcon, UploadCloudIcon, XIcon, Crown, Sparkles, CheckCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -164,13 +164,22 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setShowPricing(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
-          >
-            <Crown className="w-5 h-5" />
-            Upgrade Plan
-          </button>
+          <div className='flex gap-4'>
+            <button
+              onClick={() => navigate('/app/ats-check')}
+              className="bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center gap-2"
+            >
+              <CheckCircle className="w-5 h-5" />
+              Check ATS Score
+            </button>
+            <button
+              onClick={() => setShowPricing(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
+            >
+              <Crown className="w-5 h-5" />
+              Upgrade Plan
+            </button>
+          </div>
         </div>
 
         {/* Upload Resume Banner */}
