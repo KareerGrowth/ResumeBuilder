@@ -8,8 +8,17 @@ export const enhanceProfessionalSummary = async (req, res) => {
         const { userContent } = req.body;
 
         if (!userContent) {
+            console.log("[AI Enhance Summary] Missing userContent in request");
             return res.status(400).json({ message: 'Missing required fields' })
         }
+
+        console.log("---------------------------------------------------");
+        console.log("[AI Enhance Summary] STARTING REQUEST");
+        console.log("[AI CONFIG CHECK] Model:", process.env.OPENAI_MODEL);
+        console.log("[AI CONFIG CHECK] BaseURL:", ai.baseURL); // Check if AI instance has correct BaseURL
+        console.log("[AI CONFIG CHECK] API Key Len:", ai.apiKey ? ai.apiKey.length : "MISSING");
+        console.log("[AI PAYLOAD] Content Length:", userContent.length);
+        console.log("---------------------------------------------------");
 
         const response = await ai.chat.completions.create({
             model: process.env.OPENAI_MODEL,
@@ -22,9 +31,20 @@ export const enhanceProfessionalSummary = async (req, res) => {
             ],
         })
 
+        console.log("[AI Enhance Summary] SUCCESS");
+        console.log("[AI RESPONSE PREVIEW]:", response.choices[0].message.content.substring(0, 50) + "...");
+
         const enhancedContent = response.choices[0].message.content;
         return res.status(200).json({ enhancedContent })
     } catch (error) {
+        console.error("---------------------------------------------------");
+        console.error("[AI Enhance Summary] FAILED");
+        console.error("ERROR MESSAGE:", error.message);
+        console.error("ERROR STACK:", error.stack);
+        if (error.response) {
+            console.error("OPENAI ERROR DETAILS:", JSON.stringify(error.response.data));
+        }
+        console.error("---------------------------------------------------");
         return res.status(400).json({ message: error.message })
     }
 }
