@@ -1,24 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
-  font-family: "Outfit", sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 @layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+  
   button {
-    @apply cursor-pointer;
+    @apply cursor-pointer outline-none;
   }
 
   input:not([type="checkbox"]) {
-    @apply outline-none focus:ring border border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg;
+    @apply outline-none border border-slate-200 focus:border-slate-800 rounded-lg transition-colors bg-white px-4 py-2;
   }
 
   textarea {
-    @apply outline-none focus:ring border border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg resize-none;
+    @apply outline-none border border-slate-200 focus:border-slate-800 rounded-lg resize-none transition-colors bg-white p-3;
   }
 }
