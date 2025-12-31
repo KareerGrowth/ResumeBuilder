@@ -38,7 +38,7 @@ const allowedOrigins = [
     'http://localhost:5174',
     'http://localhost:3000',
     'https://resume-builder-production.up.railway.app',
-    'https://resume-builder-delta-amber.vercel.app'
+    'https://resume-builder-murex-rho.vercel.app'
 ];
 
 app.set('trust proxy', 1); // Trust Render/Cloudflare proxy
