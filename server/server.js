@@ -13,7 +13,7 @@ import creditRoutes from './routes/creditRoutes.js';
 import paymentRouter from './routes/paymentRoutes.js';
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import OpenAI from 'openai';
+// OpenAI import removed (using shared instance)
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -78,10 +78,9 @@ if (process.env.MYSQL_HOST) {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: process.env.OPENAI_BASE_URL
-});
+import ai from "./configs/ai.js";
+
+const client = ai;
 
 wss.on('connection', (ws) => {
     console.log('New WebSocket connection');
