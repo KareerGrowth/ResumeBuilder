@@ -1,5 +1,6 @@
 import Resume from "../models/Resume.js";
 import ai from "../configs/ai.js";
+import OpenAI from "openai";
 
 // controller for enhancing a resume's professional summary
 // POST: /api/ai/enhance-pro-sum
@@ -13,14 +14,19 @@ export const enhanceProfessionalSummary = async (req, res) => {
         }
 
         console.log("---------------------------------------------------");
-        console.log("[AI Enhance Summary] STARTING REQUEST");
-        console.log("[AI CONFIG CHECK] Model:", process.env.OPENAI_MODEL);
-        console.log("[AI CONFIG CHECK] BaseURL:", ai.baseURL); // Check if AI instance has correct BaseURL
-        console.log("[AI CONFIG CHECK] API Key Len:", ai.apiKey ? ai.apiKey.length : "MISSING");
-        console.log("[AI PAYLOAD] Content Length:", userContent.length);
+        console.log("[AI Enhance Summary] HARDCODED DEBUG MODE");
+
+        // DEBUG: Create fresh client with HARDCODED Groq URL
+        // This eliminates any Environment Variable "BaseURL" issues
+        const debugAI = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : "",
+            baseURL: "https://api.groq.com/openai/v1"
+        });
+
+        console.log("[AI CONFIG CHECK] Debug BaseURL:", debugAI.baseURL);
         console.log("---------------------------------------------------");
 
-        const response = await ai.chat.completions.create({
+        const response = await debugAI.chat.completions.create({
             model: process.env.OPENAI_MODEL,
             messages: [
                 { role: "system", content: "You are an expert in resume writing. Your task is to enhance the professional summary of a resume. The summary should be 1-2 sentences also highlighting key skills, experience, and career objectives. Make it compelling and ATS-friendly. and only return text no options or anything else." },
