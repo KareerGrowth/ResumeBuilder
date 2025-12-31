@@ -31,6 +31,7 @@ const Dashboard = () => {
   const [selectedTemplate, setSelectedTemplate] = useState('classic')
 
   const [isLoading, setIsLoading] = useState(false)
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(true)
   const [credits, setCredits] = useState(null)
 
   const navigate = useNavigate()
@@ -48,11 +49,14 @@ const Dashboard = () => {
   }
 
   const loadTemplates = async () => {
+    setIsTemplatesLoading(true)
     try {
       const { data } = await api.get('/api/resumes/templates', { headers: { Authorization: token } })
       setTemplates(data.templates)
     } catch (error) {
       console.log("Error loading templates:", error.message)
+    } finally {
+      setIsTemplatesLoading(false)
     }
   }
 
@@ -89,6 +93,7 @@ const Dashboard = () => {
   const createResume = async (event) => {
     try {
       event.preventDefault()
+      setIsLoading(true)
 
       const proceed = async () => {
         // Deduct credit first (optional: can be moved to backend auto-deduct)
@@ -105,13 +110,17 @@ const Dashboard = () => {
           } else {
             throw err;
           }
+        } finally {
+          setIsLoading(false)
         }
       };
 
       proceed();
 
     } catch (error) {
+      console.error(error)
       toast.error(error?.response?.data?.message || error.message)
+      setIsLoading(false)
     }
   }
 
@@ -126,6 +135,12 @@ const Dashboard = () => {
 
       await api.post('/api/credits/deduct', {}, { headers: { Authorization: token } });
 
+      if (!resume) {
+        toast.error("Please select a file")
+        setIsLoading(false)
+        return
+      }
+
       const resumeText = await pdfToText(resume)
       const { data } = await api.post('/api/ai/upload-resume', { title, resumeText }, { headers: { Authorization: token } })
       setTitle('')
@@ -139,8 +154,9 @@ const Dashboard = () => {
       } else {
         toast.error(error?.response?.data?.message || error.message)
       }
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -215,47 +231,62 @@ const Dashboard = () => {
 
         {/* Template Grid: Live Previews */}
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8'>
-          {templates.map((t, index) => {
-            const TemplateComponent = templateComponents[t.id] || ClassicTemplate;
-            const isRecommended = ['classic', 'modern'].includes(t.id);
+          {isTemplatesLoading ? (
+            // Template Skeleton
+            [1, 2, 3, 4].map((n) => (
+              <div key={n} className='h-[24rem] bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-pulse relative'>
+                <div className="flex-1 w-full h-[85%] bg-slate-100 relative">
+                  {/* Mock Document Shape */}
+                  <div className="absolute top-0 left-4 right-4 bottom-0 bg-white/50 m-4 rounded-t-sm"></div>
+                </div>
+                <div className="h-[15%] bg-white border-t border-slate-100 flex items-center justify-center">
+                  <div className="h-2.5 bg-slate-100 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))
+          ) : (
+            templates.map((t, index) => {
+              const TemplateComponent = templateComponents[t.id] || ClassicTemplate;
+              const isRecommended = ['classic', 'modern'].includes(t.id);
 
-            return (
-              <button
-                key={t.id}
-                onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.id); setShowCreateResume(true); })}
-                className='h-[24rem] bg-white rounded-xl shadow-md border border-slate-200 hover:shadow-2xl hover:border-indigo-400 hover:-translate-y-1 transition-all duration-300 flex flex-col group cursor-pointer relative overflow-hidden ring-0 ring-indigo-200 hover:ring-4 pb-0'
-              >
-                {/* Recommended Badge */}
-                {isRecommended && (
-                  <div className="absolute top-0 right-0 z-30 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm">
-                    Recommended
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.id); setShowCreateResume(true); })}
+                  className='h-[24rem] bg-white rounded-xl shadow-md border border-slate-200 hover:shadow-2xl hover:border-indigo-400 hover:-translate-y-1 transition-all duration-300 flex flex-col group cursor-pointer relative overflow-hidden ring-0 ring-indigo-200 hover:ring-4 pb-0'
+                >
+                  {/* Recommended Badge */}
+                  {isRecommended && (
+                    <div className="absolute top-0 right-0 z-30 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm">
+                      Recommended
+                    </div>
+                  )}
+
+                  {/* Preview Container */}
+                  <div className="flex-1 w-full bg-slate-50 relative overflow-hidden group-hover:bg-slate-100 transition-colors">
+                    <div className="absolute top-0 left-0 w-[210mm] origin-top-left transform scale-[0.28] pointer-events-none select-none bg-white shadow-lg m-4 min-h-[297mm]">
+                      <TemplateComponent data={dummyResumeData[0]} accentColor="#4f46e5" />
+                    </div>
+                    <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/5 transition-colors z-10" />
                   </div>
-                )}
 
-                {/* Preview Container */}
-                <div className="flex-1 w-full bg-slate-50 relative overflow-hidden group-hover:bg-slate-100 transition-colors">
-                  <div className="absolute top-0 left-0 w-[210mm] origin-top-left transform scale-[0.28] pointer-events-none select-none bg-white shadow-lg m-4 min-h-[297mm]">
-                    <TemplateComponent data={dummyResumeData[0]} accentColor="#4f46e5" />
+                  {/* Footer Button */}
+                  <div className="h-14 bg-white border-t border-slate-100 flex items-center justify-center relative z-20 group-hover:bg-indigo-600 transition-colors duration-300 w-full">
+                    <span className='font-bold text-slate-700 group-hover:text-white transition-colors text-sm uppercase tracking-wide'>
+                      Choose Template
+                    </span>
                   </div>
-                  <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/5 transition-colors z-10" />
-                </div>
 
-                {/* Footer Button */}
-                <div className="h-14 bg-white border-t border-slate-100 flex items-center justify-center relative z-20 group-hover:bg-indigo-600 transition-colors duration-300 w-full">
-                  <span className='font-bold text-slate-700 group-hover:text-white transition-colors text-sm uppercase tracking-wide'>
-                    Choose Template
-                  </span>
-                </div>
-
-                {/* Hover overlay for Template Name */}
-                <div className="absolute bottom-16 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="bg-black/70 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
-                    {t.name}
-                  </span>
-                </div>
-              </button>
-            )
-          })}
+                  {/* Hover overlay for Template Name */}
+                  <div className="absolute bottom-16 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="bg-black/70 text-white text-xs px-3 py-1 rounded-full backdrop-blur-sm">
+                      {t.name}
+                    </span>
+                  </div>
+                </button>
+              )
+            })
+          )}
         </div>
 
         {showCreateResume && (
@@ -280,7 +311,10 @@ const Dashboard = () => {
                   <span>This will cost 1 credit</span>
                 </div>
 
-                <button className='w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200'>Create Resume</button>
+                <button disabled={isLoading} className='w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
+                  {isLoading && <LoaderCircleIcon className="animate-spin w-5 h-5" />}
+                  {isLoading ? 'Creating...' : 'Create Resume'}
+                </button>
               </div>
               <button type="button" className='absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all' onClick={() => { setShowCreateResume(false); setTitle('') }}>
                 <XIcon className="w-5 h-5" />

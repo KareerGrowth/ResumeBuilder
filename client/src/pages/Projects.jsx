@@ -24,14 +24,21 @@ const Projects = () => {
     const [title, setTitle] = useState('')
     const [editResumeId, setEditResumeId] = useState('')
 
+    // New Loading State
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [isPageLoading, setIsPageLoading] = useState(true)
+
     const navigate = useNavigate()
 
     const loadAllResumes = async () => {
+        setIsPageLoading(true)
         try {
             const { data } = await api.get('/api/users/resumes', { headers: { Authorization: token } })
             setAllResumes(data.resumes)
         } catch (error) {
             toast.error(error?.response?.data?.message || error.message)
+        } finally {
+            setIsPageLoading(false)
         }
     }
 
@@ -47,6 +54,7 @@ const Projects = () => {
     const editTitle = async (event) => {
         try {
             event.preventDefault()
+            setIsUpdating(true)
             const { data } = await api.put(`/api/resumes/update`, { resumeId: editResumeId, resumeData: { title } }, { headers: { Authorization: token } })
             setAllResumes(allResumes.map(resume => resume._id === editResumeId ? { ...resume, title } : resume))
             setTitle('')
@@ -54,6 +62,8 @@ const Projects = () => {
             toast.success(data.message)
         } catch (error) {
             toast.error(error?.response?.data?.message || error.message)
+        } finally {
+            setIsUpdating(false)
         }
     }
 
@@ -86,7 +96,12 @@ const Projects = () => {
                     </button>
                 </div>
 
-                {allResumes.length === 0 ? (
+                {isPageLoading ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <LoaderCircleIcon className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+                        <p className="text-slate-500 font-medium">Loading Projects...</p>
+                    </div>
+                ) : allResumes.length === 0 ? (
                     <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
                         <p className="text-slate-500">No projects found. Create your first resume from the Dashboard!</p>
                         <button onClick={() => navigate('/app')} className="mt-4 text-indigo-600 font-medium hover:underline">Go to Dashboard</button>
@@ -153,7 +168,10 @@ const Projects = () => {
                             <h2 className='text-xl font-bold mb-4'>Edit Project Title</h2>
                             <input onChange={(e) => setTitle(e.target.value)} value={title} type="text" placeholder='Enter title' className='w-full px-4 py-2 mb-4 focus:border-green-600 ring-green-600' required />
 
-                            <button className='w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors'>Update</button>
+                            <button disabled={isUpdating} className='w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
+                                {isUpdating ? <LoaderCircleIcon className="animate-spin size-4" /> : null}
+                                {isUpdating ? 'Updating...' : 'Update'}
+                            </button>
                             <XIcon className='absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors' onClick={() => { setEditResumeId(''); setTitle('') }} />
                         </div>
                     </form>

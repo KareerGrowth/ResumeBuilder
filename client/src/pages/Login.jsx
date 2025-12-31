@@ -1,4 +1,4 @@
-import { Lock, Mail, User2Icon, ArrowRight, Sparkles, FileText, Paperclip, Star, Cloud, Briefcase, Globe, Search, Monitor, PenTool, Code, Terminal, Cpu, Database, Server } from 'lucide-react'
+import { Lock, Mail, User2Icon, ArrowRight, Sparkles, FileText, Paperclip, Star, Cloud, Briefcase, Globe, Search, Monitor, PenTool, Code, Terminal, Cpu, Database, Server, Loader2 } from 'lucide-react'
 import React from 'react'
 import api from '../configs/api'
 import { useDispatch } from 'react-redux'
@@ -20,8 +20,11 @@ const Login = () => {
         password: ''
     })
 
+    const [isLoading, setIsLoading] = React.useState(false)
+
     const handleSubmit = async (e) => {
         e.preventDefault()
+        setIsLoading(true)
         try {
             const { data } = await api.post(`/api/users/${state}`, formData)
             dispatch(login(data))
@@ -29,6 +32,8 @@ const Login = () => {
             toast.success(data.message)
         } catch (error) {
             toast.error(error?.response?.data?.message || error.message)
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -36,6 +41,26 @@ const Login = () => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
     }
+
+    // ... (rest of code)
+
+    <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 rounded-full transition-all shadow-lg shadow-indigo-500/30 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+    >
+        {isLoading ? (
+            <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing...
+            </>
+        ) : (
+            <>
+                {state === "login" ? "Sign In" : "Create Account"}
+                <ArrowRight className="w-5 h-5" />
+            </>
+        )}
+    </button>
 
     // Generate random icons with different movement directions (Right to Left, Left to Right, etc.)
     const bgIcons = [
@@ -174,9 +199,22 @@ const Login = () => {
                                 </div>
                             )}
 
-                            <button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 rounded-full transition-all shadow-lg shadow-indigo-500/30 active:scale-[0.98] flex items-center justify-center gap-2">
-                                {state === "login" ? "Sign In" : "Create Account"}
-                                <ArrowRight className="w-5 h-5" />
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 rounded-full transition-all shadow-lg shadow-indigo-500/30 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        {state === "login" ? "Sign In" : "Create Account"}
+                                        <ArrowRight className="w-5 h-5" />
+                                    </>
+                                )}
                             </button>
 
                             <p className="text-center text-slate-500 text-sm mt-6">

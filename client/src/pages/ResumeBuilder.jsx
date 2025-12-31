@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { dummyResumeData } from '../assets/assets'
-import { ArrowLeftIcon, Award, Briefcase, ChevronLeft, ChevronRight, DownloadIcon, EyeIcon, EyeOffIcon, FileText, FolderIcon, GraduationCap, Heart, Languages, Share2Icon, Sparkles, Trophy, User } from 'lucide-react'
+import { ArrowLeftIcon, Award, Briefcase, ChevronLeft, ChevronRight, DownloadIcon, EyeIcon, EyeOffIcon, FileText, FolderIcon, GraduationCap, Heart, Languages, Share2Icon, Sparkles, Trophy, User, Loader2 } from 'lucide-react'
 import PersonalInfoForm from '../components/PersonalInfoForm'
 import ResumePreview from '../components/ResumePreview'
 import ColorPicker from '../components/ColorPicker'
@@ -85,8 +85,13 @@ const ResumeBuilder = () => {
     loadExistingResume()
   }, [])
 
+  const [isToggling, setIsToggling] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const changeResumeVisibility = async () => {
     try {
+      setIsToggling(true)
       const formData = new FormData()
       formData.append("resumeId", resumeId)
       formData.append("resumeData", JSON.stringify({ public: !resumeData.public }))
@@ -97,6 +102,9 @@ const ResumeBuilder = () => {
       toast.success(data.message)
     } catch (error) {
       console.error("Error saving resume:", error)
+      toast.error("Failed to update visibility")
+    } finally {
+      setIsToggling(false)
     }
   }
 
@@ -107,7 +115,9 @@ const ResumeBuilder = () => {
     if (navigator.share) {
       navigator.share({ url: resumeUrl, text: "My Resume", })
     } else {
-      alert('Share not supported on this browser.')
+      // Create a temporary input to copy text
+      navigator.clipboard.writeText(resumeUrl);
+      toast.success('Link copied to clipboard!')
     }
   }
 
@@ -115,13 +125,12 @@ const ResumeBuilder = () => {
 
   const downloadResume = async () => {
     try {
+      setIsDownloading(true)
       const { data } = await api.post('/api/credits/deduct', {}, { headers: { Authorization: token } });
 
       if (data.success) {
         toast.success("Credit deducted successfully!");
         window.print();
-
-        // Optional: Update local credit state if you were tracking it
       } else {
         toast.error(data.message || "Failed to download");
       }
@@ -132,17 +141,18 @@ const ResumeBuilder = () => {
       } else {
         toast.error(error?.response?.data?.message || "Something went wrong");
       }
+    } finally {
+      setIsDownloading(false)
     }
   }
 
   const handlePaymentSuccess = () => {
     setShowPricing(false);
-    // You might want to update local credit state if you have one, 
-    // or just let the next download attempt succeed (as backend is updated)
   }
 
   const saveResume = async () => {
     try {
+      setIsSaving(true)
       let updatedResumeData = structuredClone(resumeData)
 
       // remove image from updatedResumeData
@@ -170,6 +180,9 @@ const ResumeBuilder = () => {
       toast.success(data.message)
     } catch (error) {
       console.error("Error saving resume:", error)
+      toast.error("Failed to save")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -249,8 +262,13 @@ const ResumeBuilder = () => {
 
 
               <div className="sticky bottom-0 bg-white pt-4 pb-2 mt-4 border-t border-gray-100">
-                <button onClick={() => { toast.promise(saveResume, { loading: 'Saving...' }) }} className='w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl py-3 text-sm font-bold shadow-lg shadow-indigo-200 active:scale-[0.98]'>
-                  Save Changes
+                <button
+                  onClick={saveResume}
+                  disabled={isSaving}
+                  className='w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl py-3 text-sm font-bold shadow-lg shadow-indigo-200 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'
+                >
+                  {isSaving && <Loader2 className="size-4 animate-spin" />}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </div>
@@ -265,12 +283,25 @@ const ResumeBuilder = () => {
                     <Share2Icon className='size-4' /> Share
                   </button>
                 )}
-                <button onClick={changeResumeVisibility} className='flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600 ring-purple-300 rounded-lg hover:ring transition-colors'>
-                  {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
+                <button
+                  onClick={changeResumeVisibility}
+                  disabled={isToggling}
+                  className='flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600 ring-purple-300 rounded-lg hover:ring transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
+                >
+                  {isToggling ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    resumeData.public ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />
+                  )}
                   {resumeData.public ? 'Public' : 'Private'}
                 </button>
-                <button onClick={downloadResume} className='flex items-center gap-2 px-6 py-2 text-xs bg-gradient-to-br from-green-100 to-green-200 text-green-600 rounded-lg ring-green-300 hover:ring transition-colors'>
-                  <DownloadIcon className='size-4' /> Download
+                <button
+                  onClick={downloadResume}
+                  disabled={isDownloading}
+                  className='flex items-center gap-2 px-6 py-2 text-xs bg-gradient-to-br from-green-100 to-green-200 text-green-600 rounded-lg ring-green-300 hover:ring transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
+                >
+                  {isDownloading ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className='size-4' />}
+                  {isDownloading ? 'Downloading...' : 'Download'}
                 </button>
               </div>
             </div>

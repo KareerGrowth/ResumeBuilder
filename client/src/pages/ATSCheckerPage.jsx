@@ -11,6 +11,7 @@ const ATSCheckerPage = () => {
     const [activeTab, setActiveTab] = useState('upload');
     const [analyzing, setAnalyzing] = useState(false);
     const [projects, setProjects] = useState([]);
+    const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [file, setFile] = useState(null);
     const [selectedProjectId, setSelectedProjectId] = useState(null);
     const [resumeTextRaw, setResumeTextRaw] = useState("");
@@ -28,10 +29,12 @@ const ATSCheckerPage = () => {
     }, [token]);
 
     const loadProjects = async () => {
+        setIsLoadingProjects(true);
         try {
             const { data } = await api.get('/api/users/resumes', { headers: { Authorization: token } });
             setProjects(data.resumes || []);
         } catch (error) { console.error(error); }
+        finally { setIsLoadingProjects(false); }
     };
 
     // Scroll to section handler
@@ -248,7 +251,12 @@ ${project.skills?.map(s => s.name || s).join(', ')}
                                     <h2 className="text-base font-bold text-slate-800">Recent Projects</h2>
                                 </div>
                                 <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar space-y-2">
-                                    {projects.map(p => (
+                                    {isLoadingProjects ? (
+                                        <div className="flex flex-col items-center justify-center py-8">
+                                            <Loader2 className="w-6 h-6 text-blue-600 animate-spin mb-2" />
+                                            <p className="text-xs text-slate-500 font-medium">Loading Projects...</p>
+                                        </div>
+                                    ) : (projects.map(p => (
                                         <div key={p._id} onClick={() => { setSelectedProjectId(p._id); setActiveTab('project'); setResumeTextRaw(""); handleAnalyze(p._id); }} className="group p-3 bg-white rounded-lg border border-slate-200 cursor-pointer hover:border-blue-500 hover:shadow-sm transition-all flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-md bg-slate-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
                                                 <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
@@ -259,8 +267,8 @@ ${project.skills?.map(s => s.name || s).join(', ')}
                                             </div>
                                             <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
                                         </div>
-                                    ))}
-                                    {projects.length === 0 && (
+                                    )))}
+                                    {!isLoadingProjects && projects.length === 0 && (
                                         <div className="text-center py-8 text-slate-400 text-sm">No projects found.</div>
                                     )}
                                 </div>
