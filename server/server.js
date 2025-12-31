@@ -40,17 +40,26 @@ const allowedOrigins = [
     'https://resume-builder-production.up.railway.app'
 ];
 
+app.set('trust proxy', 1); // Trust Render/Cloudflare proxy
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            // Origin is allowed
             return callback(null, true);
+        } else {
+            // Origin is not allowed
+            console.warn(`Blocked CORS request from origin: ${origin}`);
+            return callback(new Error('Not allowed by CORS'));
         }
-        return callback(null, true);
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
 app.get('/', (req, res) => res.send("Server is live..."))

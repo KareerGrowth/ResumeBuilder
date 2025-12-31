@@ -53,11 +53,13 @@ const generateRefreshToken = (userId, email, source = 'mongodb') => {
  * Set token cookies
  */
 const setTokenCookies = (res, accessToken, refreshToken) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     // Set access token cookie
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
-        secure: false, // Set to true in production with HTTPS
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'None' : 'Lax',
         maxAge: ACCESS_TOKEN_SECONDS * 1000,
         path: '/'
     });
@@ -65,8 +67,8 @@ const setTokenCookies = (res, accessToken, refreshToken) => {
     // Set refresh token cookie
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: false, // Set to true in production with HTTPS
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'None' : 'Lax',
         maxAge: REFRESH_TOKEN_SECONDS * 1000,
         path: '/'
     });
