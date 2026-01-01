@@ -7,6 +7,7 @@ import { FileText, Layout, Upload, CheckCircle, ChevronDown, User, LogOut, Menu,
 import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
 import api from '../configs/api'
+import ProfileLogo from '../assets/Profilet-Ai.png'
 
 const Navbar = ({ onOpenUpload }) => {
   const { user } = useSelector(state => state.auth)
@@ -51,12 +52,14 @@ const Navbar = ({ onOpenUpload }) => {
 
   return (
     <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0 z-50 font-[Outfit]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div className="w-full px-6 lg:px-12 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:to-indigo-600 transition-all">
-            Profilite-Ai
-          </span>
+          <img
+            src={ProfileLogo}
+            alt="Profilite-AI"
+            className="h-12 w-auto transition-transform group-hover:scale-105"
+          />
         </Link>
 
         {/* Desktop Menu */}

@@ -365,200 +365,93 @@ ${project.skills?.map(s => s.name || s).join(', ')}
                                             {/* Step 3: Current Resume Content Breakdown */}
                                             {analysisResult.current_resume_sections && (
                                                 <div className="mb-10 pt-8 border-t border-slate-100">
-                                                    <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
+                                                    <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                                                         <ListChecks className="w-6 h-6 text-indigo-500" /> Resume Content Architecture (Dynamic)
                                                     </h3>
 
-                                                    {/* Grid of Section Cards */}
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+                                                    {/* Direct Content Display - No Boxes */}
+                                                    <div className="space-y-6">
                                                         {analysisResult.current_resume_sections.map((section, i) => (
-                                                            <div key={i} className="flex flex-col bg-white rounded-3xl border border-slate-100 overflow-hidden transition-all duration-300 hover:border-indigo-200">
-                                                                <button
-                                                                    onClick={() => toggleSection(section)}
-                                                                    className={`w-full flex flex-row items-center gap-3 md:gap-5 p-4 md:p-6 transition-all duration-300 text-left ${expandedSections[section] ? 'border-indigo-300 bg-indigo-50/30' : 'bg-slate-50/30 hover:bg-slate-50'}`}
-                                                                >
-                                                                    <div className={`w-10 h-10 rounded-xl bg-white border-2 flex items-center justify-center text-sm font-black transition-all shrink-0 ${expandedSections[section] ? 'border-indigo-200 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>
+                                                            <div key={i} className="bg-white rounded-3xl border border-indigo-200 overflow-hidden p-6">
+                                                                {/* Section Header */}
+                                                                <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+                                                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-sm font-black text-indigo-600 shrink-0">
                                                                         {i + 1}
                                                                     </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <h4 className="text-lg md:text-xl font-black text-slate-800 leading-none truncate">{section}</h4>
+                                                                    <div className="flex-1">
+                                                                        <h4 className="text-xl md:text-2xl font-black text-slate-900">{section}</h4>
                                                                     </div>
-                                                                    <div className="shrink-0 flex items-center gap-2 md:gap-3">
-                                                                        <div className="text-right">
-                                                                            <div className="text-lg md:text-xl font-black text-indigo-600">{analysisResult.metrics?.[section]?.score || 85}%</div>
-                                                                        </div>
-                                                                        <ChevronRight className={`w-5 h-5 text-slate-300 transition-all duration-300 ${expandedSections[section] ? 'rotate-90 text-indigo-500' : ''}`} />
+                                                                    <div className="text-right">
+                                                                        <div className="text-2xl font-black text-indigo-600">{analysisResult.metrics?.[section]?.score || 85}%</div>
+                                                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Match Score</div>
                                                                     </div>
-                                                                </button>
+                                                                </div>
 
-                                                                {/* Mobile Dropdown (visible only on mobile) */}
-                                                                <AnimatePresence>
-                                                                    {expandedSections[section] && (
-                                                                        <motion.div
-                                                                            initial={{ height: 0, opacity: 0 }}
-                                                                            animate={{ height: 'auto', opacity: 1 }}
-                                                                            exit={{ height: 0, opacity: 0 }}
-                                                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                                                            className="md:hidden"
-                                                                        >
-                                                                            <div className="px-6 pb-6 pt-2">
-                                                                                <div className="h-px bg-slate-100 mb-4" />
+                                                                {/* User's Resume Content */}
+                                                                {analysisResult.section_content?.[section] && (
+                                                                    <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                                        <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Your Content</h5>
+                                                                        {(() => {
+                                                                            const content = analysisResult.section_content[section];
+                                                                            const lines = content.split('\n').filter(line => line.trim());
+                                                                            const isShortList = lines.length === 1 && !content.includes('•') && !content.includes('-') && content.split(' ').length <= 10;
 
-                                                                                {/* User's Resume Content */}
-                                                                                {analysisResult.section_content?.[section] && (
-                                                                                    <div className="mb-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                                                        <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Your Content</h5>
-                                                                                        {(() => {
-                                                                                            const content = analysisResult.section_content[section];
-                                                                                            const lines = content.split('\n').filter(line => line.trim());
-                                                                                            const isShortList = lines.length === 1 && !content.includes('•') && !content.includes('-') && content.split(' ').length <= 10;
-
-                                                                                            if (isShortList) {
-                                                                                                const items = content.trim().split(/\s+/);
-                                                                                                return (
-                                                                                                    <div className="flex flex-wrap gap-2">
-                                                                                                        {items.map((item, idx) => (
-                                                                                                            <span key={idx} className="px-3 py-1.5 bg-white border border-indigo-200 text-slate-700 text-sm rounded-full">
-                                                                                                                {item}
-                                                                                                            </span>
-                                                                                                        ))}
-                                                                                                    </div>
-                                                                                                );
-                                                                                            } else {
-                                                                                                return (
-                                                                                                    <div className="text-sm text-slate-700 space-y-2">
-                                                                                                        {lines.map((line, idx) => (
-                                                                                                            <div key={idx} className="leading-relaxed">
-                                                                                                                {line.trim().startsWith('•') || line.trim().startsWith('-') ? (
-                                                                                                                    <div className="flex gap-2">
-                                                                                                                        <span className="text-indigo-500 shrink-0">•</span>
-                                                                                                                        <span>{line.replace(/^[•\-]\s*/, '')}</span>
-                                                                                                                    </div>
-                                                                                                                ) : (
-                                                                                                                    <div>{line}</div>
-                                                                                                                )}
-                                                                                                            </div>
-                                                                                                        ))}
-                                                                                                    </div>
-                                                                                                );
-                                                                                            }
-                                                                                        })()}
+                                                                            if (isShortList) {
+                                                                                const items = content.trim().split(/\s+/);
+                                                                                return (
+                                                                                    <div className="flex flex-wrap gap-2">
+                                                                                        {items.map((item, idx) => (
+                                                                                            <span key={idx} className="px-3 py-1.5 bg-white border border-indigo-200 text-slate-700 text-sm rounded-full">
+                                                                                                {item}
+                                                                                            </span>
+                                                                                        ))}
                                                                                     </div>
-                                                                                )}
+                                                                                );
+                                                                            } else {
+                                                                                return (
+                                                                                    <div className="text-sm text-slate-700 space-y-2">
+                                                                                        {lines.map((line, idx) => (
+                                                                                            <div key={idx} className="leading-relaxed">
+                                                                                                {line.trim().startsWith('•') || line.trim().startsWith('-') ? (
+                                                                                                    <div className="flex gap-2">
+                                                                                                        <span className="text-indigo-500 shrink-0">•</span>
+                                                                                                        <span>{line.replace(/^[•\-]\s*/, '')}</span>
+                                                                                                    </div>
+                                                                                                ) : (
+                                                                                                    <div>{line}</div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                        })()}
+                                                                    </div>
+                                                                )}
 
-                                                                                {/* AI Analysis Points */}
-                                                                                <div className="space-y-0">
-                                                                                    {analysisResult.detailed_analysis?.[section]?.map((point, idx) => (
-                                                                                        <div key={idx} className="flex items-start gap-2 py-1.5">
-                                                                                            <div className="shrink-0 mt-0.5">
-                                                                                                {point.status === 'good' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> :
-                                                                                                    point.status === 'bad' ? <XCircle className="w-4 h-4 text-rose-600" /> :
-                                                                                                        <AlertTriangle className="w-4 h-4 text-amber-600" />}
-                                                                                            </div>
-                                                                                            <div className="flex-1">
-                                                                                                <p className="text-sm text-slate-700 leading-relaxed">
-                                                                                                    <span className="font-semibold">{point.label}:</span> {point.message}
-                                                                                                </p>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    ))}
+                                                                {/* AI Analysis Points */}
+                                                                <div>
+                                                                    <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">AI Feedback</h5>
+                                                                    <div className="space-y-0">
+                                                                        {analysisResult.detailed_analysis?.[section]?.map((point, idx) => (
+                                                                            <div key={idx} className="flex items-start gap-2 py-1.5">
+                                                                                <div className="shrink-0 mt-0.5">
+                                                                                    {point.status === 'good' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> :
+                                                                                        point.status === 'bad' ? <XCircle className="w-4 h-4 text-rose-600" /> :
+                                                                                            <AlertTriangle className="w-4 h-4 text-amber-600" />}
+                                                                                </div>
+                                                                                <div className="flex-1">
+                                                                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                                                                        <span className="font-semibold">{point.label}:</span> {point.message}
+                                                                                    </p>
                                                                                 </div>
                                                                             </div>
-                                                                        </motion.div>
-                                                                    )}
-                                                                </AnimatePresence>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         ))}
                                                     </div>
-
-                                                    {/* Desktop Detail Section Below Grid (hidden on mobile) */}
-                                                    <AnimatePresence>
-                                                        {Object.keys(expandedSections).find(key => expandedSections[key]) && (
-                                                            <motion.div
-                                                                initial={{ height: 0, opacity: 0 }}
-                                                                animate={{ height: 'auto', opacity: 1 }}
-                                                                exit={{ height: 0, opacity: 0 }}
-                                                                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                                                className="hidden md:block bg-white rounded-3xl border border-indigo-200 overflow-hidden"
-                                                            >
-                                                                {analysisResult.current_resume_sections.map((section) => (
-                                                                    expandedSections[section] && (
-                                                                        <div key={section} className="p-6">
-                                                                            <h3 className="text-2xl font-black text-slate-900 mb-4 flex items-center gap-3">
-                                                                                <span className="text-indigo-600">{section}</span>
-                                                                                <span className="text-sm font-bold text-slate-400">Detailed Analysis</span>
-                                                                            </h3>
-
-                                                                            <div className="h-px bg-slate-100 mb-6" />
-
-                                                                            {/* User's Resume Content */}
-                                                                            {analysisResult.section_content?.[section] && (
-                                                                                <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                                                    <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Your Content</h5>
-                                                                                    {(() => {
-                                                                                        const content = analysisResult.section_content[section];
-                                                                                        const lines = content.split('\n').filter(line => line.trim());
-                                                                                        const isShortList = lines.length === 1 && !content.includes('•') && !content.includes('-') && content.split(' ').length <= 10;
-
-                                                                                        if (isShortList) {
-                                                                                            const items = content.trim().split(/\s+/);
-                                                                                            return (
-                                                                                                <div className="flex flex-wrap gap-2">
-                                                                                                    {items.map((item, idx) => (
-                                                                                                        <span key={idx} className="px-3 py-1.5 bg-white border border-indigo-200 text-slate-700 text-sm rounded-full">
-                                                                                                            {item}
-                                                                                                        </span>
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                            );
-                                                                                        } else {
-                                                                                            return (
-                                                                                                <div className="text-sm text-slate-700 space-y-2">
-                                                                                                    {lines.map((line, idx) => (
-                                                                                                        <div key={idx} className="leading-relaxed">
-                                                                                                            {line.trim().startsWith('•') || line.trim().startsWith('-') ? (
-                                                                                                                <div className="flex gap-2">
-                                                                                                                    <span className="text-indigo-500 shrink-0">•</span>
-                                                                                                                    <span>{line.replace(/^[•\-]\s*/, '')}</span>
-                                                                                                                </div>
-                                                                                                            ) : (
-                                                                                                                <div>{line}</div>
-                                                                                                            )}
-                                                                                                        </div>
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                            );
-                                                                                        }
-                                                                                    })()}
-                                                                                </div>
-                                                                            )}
-
-                                                                            {/* AI Analysis Points */}
-                                                                            <div>
-                                                                                <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">AI Feedback</h5>
-                                                                                <div className="space-y-0">
-                                                                                    {analysisResult.detailed_analysis?.[section]?.map((point, idx) => (
-                                                                                        <div key={idx} className="flex items-start gap-2 py-1.5">
-                                                                                            <div className="shrink-0 mt-0.5">
-                                                                                                {point.status === 'good' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> :
-                                                                                                    point.status === 'bad' ? <XCircle className="w-4 h-4 text-rose-600" /> :
-                                                                                                        <AlertTriangle className="w-4 h-4 text-amber-600" />}
-                                                                                            </div>
-                                                                                            <div className="flex-1">
-                                                                                                <p className="text-sm text-slate-700 leading-relaxed">
-                                                                                                    <span className="font-semibold">{point.label}:</span> {point.message}
-                                                                                                </p>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                ))}
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
                                                 </div>
                                             )}
 

@@ -106,28 +106,46 @@ PHASE 2: STRUCTURE & FORMATTING AUDIT
    CRITICAL: Copy the ENTIRE text from each section WITHOUT any truncation, summarization, or paraphrasing.
    Include ALL sentences, ALL details, and ALL information exactly as written.
    PRESERVE LINE BREAKS: If the section has multiple bullet points or entries, put each on a NEW LINE.
-   Use "\n" (newline character) to separate different bullet points, entries, or paragraphs.
+   Use "\\n" (newline character) to separate different bullet points, entries, or paragraphs.
 3. Audit Formatting: Identify current Font Family, Size, and Alignment. Recommend professional industry standards.
 
-PHASE 3: SECTION-WISE ARCHITECTURAL ANALYSIS
-CRITICAL: For EVERY SINGLE section you identified in Phase 2 (current_resume_sections), you MUST provide 3-4 granular analysis points.
-The "detailed_analysis" object MUST contain an entry for EACH section name from "current_resume_sections".
-Categorize each point as "good" (strength), "average" (needs minor tweak), or "bad" (critical fix needed).
+PHASE 3: SECTION-WISE SCORING & ANALYSIS
+CRITICAL SCORING REQUIREMENTS:
+- For EVERY section identified in Phase 2, you MUST assign a numeric score from 0-100
+- Score each section based on: completeness (30%), relevance (30%), formatting (20%), ATS-friendliness (20%)
+- The "metrics" object MUST contain an entry for EACH section from "current_resume_sections"
+- Each section score should reflect the actual quality of that specific section
+
+CRITICAL ANALYSIS REQUIREMENTS:
+- For EVERY SINGLE section you identified in Phase 2 (current_resume_sections), you MUST provide 3-4 granular analysis points.
+- The "detailed_analysis" object MUST contain an entry for EACH section name from "current_resume_sections".
+- Categorize each point as "good" (strength), "average" (needs minor tweak), or "bad" (critical fix needed).
 
 Example: If current_resume_sections = ["Profile Summary", "Education", "Skills", "Experience", "Projects", "Certifications"]
-Then detailed_analysis MUST have keys for ALL 6 sections with 3-4 points each.
+Then:
+- metrics MUST have keys for ALL 6 sections with numeric scores
+- detailed_analysis MUST have keys for ALL 6 sections with 3-4 points each
 
-PHASE 4: EXECUTIVE EVALUATION
+PHASE 4: OVERALL ATS SCORE CALCULATION
+CRITICAL: Calculate the overall ATS score (0-100) as a weighted average of ALL section scores:
+- Profile/Summary: 20% weight
+- Experience/Work History: 25% weight
+- Skills: 20% weight
+- Education: 15% weight
+- Other sections (Projects, Certifications, etc.): 20% weight combined
+The final ats_score MUST be a realistic number between 0-100 that accurately reflects the resume quality.
+
+PHASE 5: EXECUTIVE EVALUATION
 Generate a 2-3 sentence high-impact narrative summary of the candidate's entire profile.
 
-PHASE 5: MASTER DRAFT
+PHASE 6: MASTER DRAFT
 Generate a fully optimized, markdown-formatted version of the resume that follows the identified profile's optimal section hierarchy.
 
 OUTPUT REQUIREMENTS:
 Return valid JSON matching this schema:
 {
   "profile_type": "Fresher" | "Experienced",
-  "ats_score": number (0-100),
+  "ats_score": number (0-100, calculated as weighted average of section scores),
   "score_justification": "1 sentence explanation of the score",
   "executive_summary": "2-3 high-impact sentences describing the profile",
   "formatting_audit": {
@@ -154,11 +172,9 @@ Return valid JSON matching this schema:
     ... (MUST include ALL sections from current_resume_sections)
   },
   "metrics": {
-    "Header": { "score": number, "feedback": "string" },
-    "Summary / Objective": { "score": number, "feedback": "string" },
-    "Skills": { "score": number, "feedback": "string" },
-    "Experience / Internships / Projects": { "score": number, "feedback": "string" },
-    "Education": { "score": number, "feedback": "string" }
+    "Section 1": { "score": number (0-100), "feedback": "Brief feedback on this section" },
+    "Section 2": { "score": number (0-100), "feedback": "Brief feedback on this section" },
+    ... (MUST include ALL sections from current_resume_sections with their individual scores)
   },
   "optimized_resume_markdown": "Complete professional resume draft in Markdown"
 }`;
