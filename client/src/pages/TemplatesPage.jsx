@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, LoaderCircleIcon, Crown } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LoaderCircleIcon, Crown, X } from 'lucide-react'
 import sandGif from '../assets/sand.gif'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -149,19 +149,24 @@ const TemplatesPage = () => {
                     </div>
                 ) : (
                     templates.map((t, index) => {
-                        const TemplateComponent = templateComponents[t.id] || ClassicTemplate;
-                        const isRecommended = ['classic', 'modern'].includes(t.id);
+                        // Extract base ID (e.g., "classic" from "classic-12345")
+                        const baseId = t.templateId?.replace(/-\d{5}$/, "") || 'classic';
+                        const TemplateComponent = templateComponents[baseId] || ClassicTemplate;
+                        const isRecommended = ['classic', 'modern'].includes(baseId);
 
                         return (
                             <button
-                                key={index}
-                                onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.id); setShowCreateResume(true); })}
+                                key={t._id}
+                                onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.templateId); setShowCreateResume(true); })}
                                 className='aspect-[210/260] bg-white rounded-xl border border-slate-200 hover:border-slate-800 transition-all duration-200 flex flex-col group cursor-pointer relative overflow-hidden shadow-[0_0_20px_rgba(148,163,184,0.15)]'
                             >
-                                {/* Recommended Badge */}
-                                {isRecommended && (
-                                    <div className="absolute top-3 right-3 z-30 bg-indigo-600 text-white text-[10px] font-medium px-2 py-1 rounded shadow-sm">
-                                        Recommended
+                                {/* Status Badge */}
+                                {t.status && (
+                                    <div className={`absolute top-3 right-3 z-30 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md uppercase tracking-wider ${t.status === 'PRO' ? 'bg-purple-600' :
+                                            t.status === 'PREMIUM' ? 'bg-amber-500' :
+                                                'bg-indigo-600'
+                                        }`}>
+                                        {t.status}
                                     </div>
                                 )}
 
@@ -226,7 +231,7 @@ const TemplatesPage = () => {
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-slate-900">Name your Resume</h3>
                             <button onClick={() => setShowCreateResume(false)} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
-                                <XIcon className="w-5 h-5 text-slate-500" />
+                                <X className="w-5 h-5 text-slate-500" />
                             </button>
                         </div>
 

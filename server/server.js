@@ -6,6 +6,7 @@ import mysqlAuthService from './services/mysqlAuthService.js';
 import "dotenv/config";
 import connectDB from "./configs/db.js";
 import { testConnection } from "./configs/mysql.js";
+import { initializeData } from "./services/initializationService.js";
 import userRouter from "./routes/userRoutes.js";
 import resumeRouter from "./routes/resumeRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
@@ -20,6 +21,7 @@ const PORT = process.env.PORT || 5000;
 
 // Database connections
 await connectDB();
+await initializeData();
 
 try {
     const mysqlConnected = await testConnection();
@@ -92,41 +94,74 @@ wss.on('connection', (ws) => {
             if (data.type === 'ats_check') {
                 const { resumeText } = data;
 
-                const systemPrompt = `You are an expert ATS (Applicant Tracking System) Analyzer & Resume Coach.
-Analyze the resume deeply and provided a structured JSON response.
+                const systemPrompt = `You are a Senior Executive Talent Acquisition Partner and ATS Architect. 
+Your goal is to perform a high-impact, architectural audit of a resume to identify structural integrity, formatting professionality, and profile alignment.
 
-CRITICAL INSTRUCTIONS:
-1. **Dynamic Sections**: Only include sections in the JSON that are ACTUALLY PRESENT in the resume. If a section (like "Experience", "Certificates", or "Projects") is missing from the text, DO NOT include it in the "metrics" or "detailed_analysis" objects.
-2. **Analysis**: For each present section, provide a brief summary and a checklist of 3-6 actionable points.
+PHASE 1: CATEGORIZATION
+Identify if the candidate is a "Fresher" (entry-level, student, career changer with < 2 years experience) or an "Experienced Professional" (solid career track, 2+ years).
 
-STRICT JSON OUTPUT FORMAT:
+PHASE 2: STRUCTURE & FORMATTING AUDIT
+1. Audit the physical sections found in the resume from start to end.
+2. Extract the COMPLETE, VERBATIM content for each section as it appears in the resume.
+   CRITICAL: Copy the ENTIRE text from each section WITHOUT any truncation, summarization, or paraphrasing.
+   Include ALL sentences, ALL details, and ALL information exactly as written.
+   PRESERVE LINE BREAKS: If the section has multiple bullet points or entries, put each on a NEW LINE.
+   Use "\n" (newline character) to separate different bullet points, entries, or paragraphs.
+3. Audit Formatting: Identify current Font Family, Size, and Alignment. Recommend professional industry standards.
+
+PHASE 3: SECTION-WISE ARCHITECTURAL ANALYSIS
+CRITICAL: For EVERY SINGLE section you identified in Phase 2 (current_resume_sections), you MUST provide 3-4 granular analysis points.
+The "detailed_analysis" object MUST contain an entry for EACH section name from "current_resume_sections".
+Categorize each point as "good" (strength), "average" (needs minor tweak), or "bad" (critical fix needed).
+
+Example: If current_resume_sections = ["Profile Summary", "Education", "Skills", "Experience", "Projects", "Certifications"]
+Then detailed_analysis MUST have keys for ALL 6 sections with 3-4 points each.
+
+PHASE 4: EXECUTIVE EVALUATION
+Generate a 2-3 sentence high-impact narrative summary of the candidate's entire profile.
+
+PHASE 5: MASTER DRAFT
+Generate a fully optimized, markdown-formatted version of the resume that follows the identified profile's optimal section hierarchy.
+
+OUTPUT REQUIREMENTS:
+Return valid JSON matching this schema:
 {
-  "ats_score": <0-100 integer>,
-  "metrics": {
-    // Only include keys for sections found in the resume. Examples:
-    "Professional Summary": { "score": <0-100>, "issues": <count> },
-    "Experience": { "score": <0-100>, "issues": <count> },
-    // ... others only if present
+  "profile_type": "Fresher" | "Experienced",
+  "ats_score": number (0-100),
+  "score_justification": "1 sentence explanation of the score",
+  "executive_summary": "2-3 high-impact sentences describing the profile",
+  "formatting_audit": {
+    "current_font": "string",
+    "recommended_font": "string",
+    "current_size": "string",
+    "recommended_size": "string",
+    "current_alignment": "string",
+    "recommended_alignment": "string"
   },
-  "overall_verdict": {
-    "summary": "2-3 sentences executive summary.",
-    "strengths": ["List 3 key strengths"],
-    "red_flags": ["List 3 critical red flags"],
-    "roadmap": ["Step 1", "Step 2", "Step 3"]
+  "current_resume_sections": ["Section 1", "Section 2", ...],
+  "section_content": {
+    "Section 1": "Actual text content from this section in the resume",
+    "Section 2": "Actual text content from this section in the resume",
+    ... (MUST include content for ALL sections from current_resume_sections)
   },
   "detailed_analysis": {
-    // Keys MUST match those in "metrics". Only include present sections.
-    "Professional Summary": {
-        "summary": "Brief analysis paragraph.",
-        "items": [
-             { "label": "Point 1", "status": "pass/warning/fail", "message": "...", "fix": "..." },
-             // ... 3 to 6 items
-        ]
-    },
-    // ... other sections ONLY if present in resume
-  }
-}
-`;
+    "Section 1": [
+      { "label": "Point title", "status": "good" | "average" | "bad", "message": "Feedback" },
+      { "label": "Point title", "status": "good" | "average" | "bad", "message": "Feedback" },
+      { "label": "Point title", "status": "good" | "average" | "bad", "message": "Feedback" }
+    ],
+    "Section 2": [...],
+    ... (MUST include ALL sections from current_resume_sections)
+  },
+  "metrics": {
+    "Header": { "score": number, "feedback": "string" },
+    "Summary / Objective": { "score": number, "feedback": "string" },
+    "Skills": { "score": number, "feedback": "string" },
+    "Experience / Internships / Projects": { "score": number, "feedback": "string" },
+    "Education": { "score": number, "feedback": "string" }
+  },
+  "optimized_resume_markdown": "Complete professional resume draft in Markdown"
+}`;
 
                 console.log(`[ATS Check] Sending request to OpenAI model: ${process.env.OPENAI_MODEL}`);
                 const completion = await client.chat.completions.create({

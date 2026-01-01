@@ -64,17 +64,28 @@ export const createOrder = async (req, res) => {
                 planType: planType
             });
         } else {
-            // Save in MySQL
-            await mysqlAuthService.createPayment({
-                orderId: order.id,
-                amount: plan.amount,
-                currency: "INR",
-                status: "created",
-                receipt: options.receipt,
-                userId: userId,
-                userEmail: userEmail,
-                planType: planType
-            });
+            // Save in MySQL (IF AVAILABLE)
+            try {
+                const mysqlAvailable = await mysqlAuthService.isAvailable();
+                if (mysqlAvailable) {
+                    await mysqlAuthService.createPayment({
+                        orderId: order.id,
+                        amount: plan.amount,
+                        currency: "INR",
+                        status: "created",
+                        receipt: options.receipt,
+                        userId: userId,
+                        userEmail: userEmail,
+                        planType: planType
+                    });
+                } else {
+                    console.error('[Payment] MySQL unavailable - cannot store MySQL payment. Registration might have been forced to MongoDB.');
+                    throw new Error("Payment storage failed: Service unavailable.");
+                }
+            } catch (error) {
+                console.error('[Payment] MySQL Error during order creation:', error.message);
+                throw error;
+            }
         }
 
         res.json({
@@ -118,18 +129,24 @@ export const verifyPayment = async (req, res) => {
         let isMysql = false;
 
         if (!payment) {
-            // Check MySQL
-            const mysqlPayment = await mysqlAuthService.getPaymentByOrderId(orderId);
-            if (mysqlPayment) {
-                isMysql = true;
-                // Map to object similar to Mongo document for easy usage
-                payment = {
-                    planType: mysqlPayment.plan_type,
-                    userId: mysqlPayment.user_id,
-                    _id: mysqlPayment.id, // Use numeric ID as ref
-                    // ... other fields if needed
-                };
-            } else {
+            // Check MySQL (IF AVAILABLE)
+            try {
+                if (await mysqlAuthService.isAvailable()) {
+                    const mysqlPayment = await mysqlAuthService.getPaymentByOrderId(orderId);
+                    if (mysqlPayment) {
+                        isMysql = true;
+                        payment = {
+                            planType: mysqlPayment.plan_type,
+                            userId: mysqlPayment.user_id,
+                            _id: mysqlPayment.id,
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('[Payment] MySQL Error during verification lookup:', error.message);
+            }
+
+            if (!payment) {
                 return res.status(404).json({ message: "Order not found" });
             }
         }

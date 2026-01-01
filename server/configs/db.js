@@ -11,13 +11,14 @@ const connectDB = async () => {
             throw new Error("MONGODB_URI environment variable not set")
         }
 
-        // Parse the URI to replace the database name properly
-        // MongoDB URI format: mongodb+srv://user:pass@host/database?params
+        // Create the final URI
         const url = new URL(mongodbURI.replace('mongodb+srv://', 'https://'));
         url.pathname = `/${projectName}`;
-        const fixedURI = url.toString().replace('https://', 'mongodb+srv://');
+        const finalURI = url.toString().replace('https://', 'mongodb+srv://');
 
-        await mongoose.connect(fixedURI)
+        console.log(`[DB] Connecting to MongoDB: ${projectName}...`);
+        await mongoose.connect(finalURI);
+        console.log(`[DB] Successfully connected to database: ${mongoose.connection.db.databaseName}`);
     } catch (error) {
         console.error("Error connecting to MongoDB:", error)
     }

@@ -189,19 +189,24 @@ const Dashboard = () => {
             </div>
           ) : (
             templates.slice(0, 8).map((t, index) => {
-              const TemplateComponent = templateComponents[t.id] || ClassicTemplate;
-              const isRecommended = ['classic', 'modern'].includes(t.id);
+              // Extract base ID (e.g., "classic" from "classic-12345")
+              const baseId = t.templateId?.replace(/-\d{5}$/, "") || 'classic';
+              const TemplateComponent = templateComponents[baseId] || ClassicTemplate;
+              const isRecommended = ['classic', 'modern'].includes(baseId);
 
               return (
                 <button
-                  key={t.id}
-                  onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.id); setShowCreateResume(true); })}
+                  key={t._id}
+                  onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.templateId); setShowCreateResume(true); })}
                   className='aspect-[210/260] bg-white rounded-xl border border-slate-200 hover:border-slate-800 transition-all duration-200 flex flex-col group cursor-pointer relative overflow-hidden shadow-[0_0_20px_rgba(148,163,184,0.15)]'
                 >
-                  {/* Recommended Badge */}
-                  {isRecommended && (
-                    <div className="absolute top-3 right-3 z-30 bg-indigo-600 text-white text-[10px] font-medium px-2 py-1 rounded shadow-sm">
-                      Recommended
+                  {/* Status Badge */}
+                  {t.status && (
+                    <div className={`absolute top-3 right-3 z-30 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md uppercase tracking-wider ${t.status === 'PRO' ? 'bg-purple-600' :
+                      t.status === 'PREMIUM' ? 'bg-amber-500' :
+                        'bg-indigo-600'
+                      }`}>
+                      {t.status}
                     </div>
                   )}
 
@@ -232,7 +237,7 @@ const Dashboard = () => {
                 <div className="mx-auto w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center mb-4">
                   <LayoutTemplate className="w-5 h-5 text-slate-900" />
                 </div>
-                <h2 className='text-xl font-semibold text-slate-900'>Create <span className='text-slate-900'>{templates.find(t => t.id === selectedTemplate)?.name || 'New'}</span> Resume</h2>
+                <h2 className='text-xl font-semibold text-slate-900'>Create <span className='text-slate-900'>{templates.find(t => t.templateId === selectedTemplate)?.name || 'New'}</span> Resume</h2>
                 <p className="text-slate-500 text-sm mt-1">Give your new resume a name to get started</p>
               </div>
 
@@ -308,7 +313,7 @@ const Dashboard = () => {
                   <span>This will cost 1 credit</span>
                 </div>
 
-                <button disabled={isLoading} className='w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-black transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
+                <button disabled={isLoading} className='w-full py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
                   {isLoading && <LoaderCircleIcon className='animate-spin w-4 h-4 text-white' />}
                   {isLoading ? 'Processing...' : 'Upload & Convert'}
                 </button>

@@ -138,7 +138,7 @@ const Pricing = ({ onClose, onSuccess }) => {
                     </div>
 
                     {/* Ultimate Plan */}
-                    <div className="relative group p-8 rounded-3xl border-2 border-violet-100 bg-gradient-to-br from-violet-50 to-white hover:border-violet-500 hover:shadow-xl transition-all duration-300">
+                    <div className="relative group p-8 rounded-3xl border-2 border-violet-100 bg-slate-50 hover:border-violet-500 hover:shadow-xl transition-all duration-300">
                         <div className="mb-6">
                             <Crown className="w-10 h-10 text-violet-600 mb-4" />
                             <h3 className="text-2xl font-bold text-slate-900">Ultimate Plan</h3>

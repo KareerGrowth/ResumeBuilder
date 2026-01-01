@@ -7,9 +7,12 @@ import tokenBlacklistService from "../services/tokenBlacklistService.js";
 import mysqlAuthService from "../services/mysqlAuthService.js";
 import Credit from "../models/Credit.js";
 
+import { sendOTP } from "../services/emailService.js";
+import crypto from 'crypto';
+
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
-const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || '15m';
+const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || '7d';
 const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || '14d';
 
 // Convert expiry string to seconds for cookie maxAge
@@ -99,94 +102,199 @@ const clearTokenCookies = (res) => {
 // POST: /api/users/register
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, phone, password } = req.body;
 
         // check if required fields are present
-        if (!name || !email || !password) {
+        if (!name || !email || !phone || !password) {
             return res.status(400).json({ message: 'Missing required fields' })
         }
 
         // STEP 1: Check if user already exists in MongoDB
-        const existingMongoUser = await User.findOne({ email });
-        if (existingMongoUser) {
-            return res.status(400).json({ message: 'User already exists' });
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ message: 'Email already registered' });
         }
 
-        // STEP 2: Check if user exists in MySQL (candidates database) - STRICT CHECK
-        // This ensures email uniqueness across BOTH databases
+        const existingPhone = await User.findOne({ phone });
+        if (existingPhone) {
+            return res.status(400).json({ message: 'Phone number already registered' });
+        }
+
+        // STEP 2: Check if user exists in MySQL (optional)
         try {
             const mysqlAvailable = await mysqlAuthService.isAvailable();
-
-            // STRICT: If MySQL is not available, we MUST block registration to prevent duplicates
-            if (!mysqlAvailable) {
-                console.error('MySQL service unavailable during registration - blocking to prevent duplicates');
-                return res.status(503).json({
-                    message: 'Registration temporarily unavailable. Please try again later.'
-                });
-            }
-
-            const candidate = await mysqlAuthService.getCandidateByEmail(email);
-            if (candidate) {
-                return res.status(400).json({
-                    message: 'Email already registered. Please use login instead.'
-                });
+            if (mysqlAvailable) {
+                const candidate = await mysqlAuthService.getCandidateByEmail(email);
+                if (candidate) {
+                    return res.status(400).json({
+                        message: 'Email already registered in candidate system. Please use login instead.'
+                    });
+                }
             }
         } catch (error) {
-            console.error('Critical error checking MySQL user:', error);
-            // STRICT: Block registration on error to ensure uniqueness safety
-            return res.status(500).json({
-                message: 'System error during registration check. Please try again.'
-            });
+            console.error('Non-critical error checking MySQL user:', error);
         }
 
-        // STEP 3: Create new user in MongoDB
+        // STEP 3: Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+        const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+        // STEP 4: Create inactive user in MongoDB
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.create({
             name,
             email,
+            phone,
             password: hashedPassword,
-            lastLogin: new Date()
+            otp,
+            otpExpiresAt,
+            isVerified: false
         });
 
-        // Initialize User Credits (Free Plan: 2 credits, 3 months validity)
-        const threeMonthsFromNow = new Date();
-        threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+        // Send OTP
+        await sendOTP(email, otp);
 
-        await Credit.create({
-            userId: newUser._id,
-            planType: 'Free',
-            totalCredits: 2,
-            usedCredits: 0,
-            expiresAt: threeMonthsFromNow
-        });
-
-        // Generate tokens
-        const accessToken = generateAccessToken(newUser._id.toString(), newUser.email, 'mongodb');
-        const refreshToken = generateRefreshToken(newUser._id.toString(), newUser.email, 'mongodb');
-
-        // Store refresh token in database
-        const expiresAt = new Date(Date.now() + REFRESH_TOKEN_SECONDS * 1000);
-        await RefreshToken.create({
-            userId: newUser._id,
-            token: refreshToken,
-            expiresAt
-        });
-
-        // Set cookies
-        setTokenCookies(res, accessToken, refreshToken);
-
-        // Return success (don't send tokens in body)
-        newUser.password = undefined;
         return res.status(201).json({
-            message: 'User created successfully',
-            user: newUser,
-            token: accessToken, // Send token for fallback auth
-            source: 'mongodb'
+            message: 'OTP sent to your email. Please verify to complete registration.',
+            email: email,
+            requiresVerification: true
         });
 
     } catch (error) {
         console.error('Registration error:', error);
         return res.status(400).json({ message: error.message })
+    }
+}
+
+// Verify OTP Controller
+export const verifyOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({ message: 'Email and OTP are required' });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'User is already verified' });
+        }
+
+        // Check verification
+        if (user.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        if (new Date() > user.otpExpiresAt) {
+            return res.status(400).json({ message: 'OTP has expired' });
+        }
+
+        // Activate User
+        await User.findOneAndUpdate(
+            { email },
+            {
+                isVerified: true,
+                $unset: { otp: 1, otpExpiresAt: 1 },
+                lastLogin: new Date()
+            }
+        );
+
+        // Initialize User Credits
+        try {
+            console.log(`[VERIFY_OTP] Initializing credits for user: ${user._id}`);
+            const threeMonthsFromNow = new Date();
+            threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+
+            await Credit.updateOne(
+                { userId: user._id },
+                {
+                    $setOnInsert: {
+                        planType: 'Free',
+                        totalCredits: 2,
+                        usedCredits: 0,
+                        expiresAt: threeMonthsFromNow
+                    }
+                },
+                { upsert: true }
+            );
+            console.log(`[VERIFY_OTP] Credits initialized/checked successfully`);
+        } catch (creditError) {
+            // E11000 is expected if another process wins the race
+            if (creditError.code === 11000) {
+                console.log("[VERIFY_OTP] Credits record already exists (duplicate key handled)");
+            } else {
+                console.error("[VERIFY_OTP] Non-duplicate error setting up credits:", creditError);
+            }
+        }
+
+        // Generate tokens (7 days)
+        const userIdStr = user._id.toString();
+        const accessToken = generateAccessToken(userIdStr, user.email, 'mongodb');
+        const refreshToken = generateRefreshToken(userIdStr, user.email, 'mongodb');
+
+        // Store refresh token (upsert to avoid conflicts)
+        try {
+            const expiresAt = new Date(Date.now() + REFRESH_TOKEN_SECONDS * 1000);
+            await RefreshToken.findOneAndUpdate(
+                { userId: userIdStr },
+                {
+                    token: refreshToken,
+                    expiresAt
+                },
+                { upsert: true, new: true }
+            );
+        } catch (tokenError) {
+            console.error("Error storing refresh token:", tokenError);
+        }
+
+        setTokenCookies(res, accessToken, refreshToken);
+
+        user.password = undefined;
+        return res.status(200).json({
+            message: 'Email verified successfully',
+            user,
+            token: accessToken,
+            source: 'mongodb'
+        });
+
+    } catch (error) {
+        console.error('OTP Verification Error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+// Resend OTP Controller
+export const resendOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (user.isVerified) return res.status(400).json({ message: 'User already verified' });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Update user using findOneAndUpdate to avoid validation issues with other fields
+        await User.findOneAndUpdate(
+            { email },
+            {
+                otp,
+                otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000)
+            },
+            { upsert: false } // Only if user exists
+        );
+
+        await sendOTP(email, otp);
+
+        res.status(200).json({ message: 'New OTP sent to your email' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 }
 
@@ -196,106 +304,109 @@ export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found. Please register.', userNotFound: true });
+        }
+
+        if (!user.isVerified) {
+            return res.status(403).json({
+                message: 'Account not verified. Please verify your email.',
+                requiresVerification: true,
+                email: email
+            });
+        }
+
+        if (!user.comparePassword(password)) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
         if (!email || !password) {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
-        console.log(`[LOGIN] Attempting login for email: ${email}`);
-
-        let user = null;
-        let userId = null;
-        let source = null;
+        console.log(`[LOGIN] Found MongoDB user: ${user._id}`);
+        let userId = user._id.toString();
+        let source = 'mongodb';
 
         // Priority 1: Check MySQL candidates database first
-        console.log('[LOGIN] Checking MySQL database...');
         try {
             const mysqlAvailable = await mysqlAuthService.isAvailable();
-            console.log(`[LOGIN] MySQL available: ${mysqlAvailable}`);
-
             if (mysqlAvailable) {
+                console.log('[LOGIN] Checking MySQL database for candidate...');
                 const candidate = await mysqlAuthService.authenticateCandidate(email, password);
-                console.log(`[LOGIN] MySQL authentication result: ${candidate ? 'SUCCESS' : 'FAILED'}`);
-
                 if (candidate) {
                     // Convert MySQL candidate to user format
                     user = {
                         name: candidate.name,
                         email: candidate.email,
-                        _id: candidate.id // Use MySQL ID
+                        _id: candidate.id
                     };
-                    userId = Buffer.from(candidate.id).toString('hex'); // Convert binary UUID to hex string
+                    userId = Buffer.from(candidate.id).toString('hex');
                     source = 'mysql';
-
-                    console.log(`[LOGIN] MySQL user authenticated: ${email}, userId: ${userId}`);
-
-                    // Update last login
+                    console.log(`[LOGIN] Authenticated via MySQL. userId: ${userId}`);
                     await mysqlAuthService.updateLastLogin(email);
                 }
-            } else {
-                console.log('[LOGIN] MySQL not available, skipping MySQL authentication');
             }
         } catch (error) {
-            console.error('[LOGIN] MySQL authentication error:', error.message);
-            console.error('[LOGIN] Full error:', error);
-            // Continue to MongoDB check
+            console.error('[LOGIN] MySQL auth non-fatal error:', error.message);
         }
 
-        // Priority 2: Check MongoDB if not found in MySQL
-        if (!user) {
-            console.log('[LOGIN] Checking MongoDB database...');
-            const mongoUser = await User.findOne({ email });
-            console.log(`[LOGIN] MongoDB user found: ${mongoUser ? 'YES' : 'NO'}`);
-
-            if (mongoUser && mongoUser.comparePassword(password)) {
-                user = mongoUser;
-                userId = mongoUser._id.toString();
+        // Final sanity check for userId and source
+        if (!userId || !source) {
+            console.error(`[LOGIN] CRITICAL: userId or source missing. userId=${userId}, source=${source}`);
+            // Fallback to MongoDB if we have the user
+            if (user && user._id) {
+                userId = user._id.toString();
                 source = 'mongodb';
-
-                console.log(`[LOGIN] MongoDB user authenticated: ${email}`);
-
-                // Update last login
-                mongoUser.lastLogin = new Date();
-                await mongoUser.save();
-            } else if (mongoUser) {
-                console.log('[LOGIN] MongoDB user found but password incorrect');
             }
         }
 
-        // If no user found in either database
-        if (!user) {
-            console.log(`[LOGIN] Login failed for ${email} - user not found or invalid password`);
-            return res.status(400).json({ message: 'Invalid email or password' });
+        // If user came from MongoDB, update last login (use findOneAndUpdate to avoid validation blocks)
+        if (source === 'mongodb') {
+            await User.findOneAndUpdate(
+                { _id: user._id },
+                { lastLogin: new Date() }
+            );
         }
 
-        console.log(`[LOGIN] Login successful for ${email} from ${source}`);
+        console.log(`[LOGIN] Login proceeding for ${email} from ${source} (userId: ${userId})`);
 
         // Generate tokens
         const accessToken = generateAccessToken(userId, email, source);
         const refreshToken = generateRefreshToken(userId, email, source);
 
         // Store refresh token in MongoDB (for both MySQL and MongoDB users)
-        const expiresAt = new Date(Date.now() + REFRESH_TOKEN_SECONDS * 1000);
-        console.log(`[LOGIN] Creating refresh token for userId: ${userId}, source: ${source}`);
+        try {
+            const expiresAt = new Date(Date.now() + REFRESH_TOKEN_SECONDS * 1000);
+            console.log(`[LOGIN] Creating/Updating refresh token for userId: ${userId}, source: ${source}`);
 
-        await RefreshToken.create({
-            userId: userId, // Always store as string (works for both MongoDB ObjectId strings and MySQL hex strings)
-            token: refreshToken,
-            expiresAt
-        });
+            await RefreshToken.findOneAndUpdate(
+                { userId: userId },
+                {
+                    token: refreshToken,
+                    expiresAt
+                },
+                { upsert: true, new: true }
+            );
 
-        console.log('[LOGIN] Refresh token created successfully');
+            console.log('[LOGIN] Refresh token handled successfully');
+        } catch (tokenError) {
+            console.error('[LOGIN] Refresh token error:', tokenError);
+            // Non-fatal, but logged
+        }
 
         // Set cookies
         setTokenCookies(res, accessToken, refreshToken);
 
         // Remove password from response
-        if (user.password) {
-            user.password = undefined;
-        }
+        const userObj = user.toObject ? user.toObject() : { ...user };
+        delete userObj.password;
 
         return res.status(200).json({
             message: 'Login successful',
-            user,
+            user: userObj,
             token: accessToken, // Send token for fallback auth
             source
         });

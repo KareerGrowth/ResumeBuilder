@@ -7,18 +7,40 @@ import toast from 'react-hot-toast'
 import loginImg from '../assets/login.jpeg'
 import { motion } from 'framer-motion'
 
+import { useNavigate } from 'react-router-dom'
+
 const Login = () => {
 
     const dispatch = useDispatch()
+    const navigate = useNavigate()
     const query = new URLSearchParams(window.location.search)
     const urlState = query.get('state')
     const [state, setState] = React.useState(urlState || "login")
+    const [showOTP, setShowOTP] = React.useState(false)
+    const [verificationEmail, setVerificationEmail] = React.useState('')
 
     const [formData, setFormData] = React.useState({
         name: '',
         email: '',
-        password: ''
+        phone: '',
+        password: '',
+        otp: ''
     })
+
+    const [rememberMe, setRememberMe] = React.useState(false)
+
+    React.useEffect(() => {
+        const remembered = localStorage.getItem('rememberedUser')
+        if (remembered) {
+            try {
+                const { email, password } = JSON.parse(atob(remembered))
+                setFormData(prev => ({ ...prev, email, password }))
+                setRememberMe(true)
+            } catch (e) {
+                localStorage.removeItem('rememberedUser')
+            }
+        }
+    }, [])
 
     const [isLoading, setIsLoading] = React.useState(false)
 
@@ -26,9 +48,68 @@ const Login = () => {
         e.preventDefault()
         setIsLoading(true)
         try {
+            if (showOTP) {
+                // Verify OTP
+                const { data } = await api.post('/api/users/verify-otp', {
+                    email: verificationEmail || formData.email,
+                    otp: formData.otp
+                })
+                dispatch(login(data))
+                localStorage.setItem('token', data.token)
+                toast.success(data.message)
+                navigate('/app')
+                return;
+            }
+
             const { data } = await api.post(`/api/users/${state}`, formData)
-            dispatch(login(data))
-            localStorage.setItem('token', data.token)
+
+            if (data.requiresVerification) {
+                setShowOTP(true)
+                setVerificationEmail(data.email)
+                toast.success(data.message)
+            } else {
+                dispatch(login(data))
+                localStorage.setItem('token', data.token)
+
+                // Handle Remember Me
+                if (rememberMe && state === 'login') {
+                    const credentials = btoa(JSON.stringify({ email: formData.email, password: formData.password }))
+                    localStorage.setItem('rememberedUser', credentials)
+                } else if (!rememberMe) {
+                    localStorage.removeItem('rememberedUser')
+                }
+
+                toast.success(data.message)
+                navigate('/app')
+            }
+        } catch (error) {
+            const errorMsg = error?.response?.data?.message || error.message;
+            if (error?.response?.status === 403 && error?.response?.data?.requiresVerification) {
+                const email = error?.response?.data?.email;
+                setShowOTP(true)
+                setVerificationEmail(email)
+                toast.error(errorMsg)
+                // Automatically trigger resend OTP so they get a fresh code
+                try {
+                    await api.post('/api/users/resend-otp', { email });
+                } catch (resendError) {
+                    console.error("Auto-resend OTP failed:", resendError);
+                }
+            } else if (error?.response?.status === 404 && error?.response?.data?.userNotFound) {
+                setState("register")
+                toast.error(errorMsg)
+            } else {
+                toast.error(errorMsg)
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleResendOTP = async () => {
+        try {
+            setIsLoading(true)
+            const { data } = await api.post('/api/users/resend-otp', { email: verificationEmail || formData.email })
             toast.success(data.message)
         } catch (error) {
             toast.error(error?.response?.data?.message || error.message)
@@ -41,26 +122,6 @@ const Login = () => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
     }
-
-    // ... (rest of code)
-
-    <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 rounded-full transition-all shadow-lg shadow-indigo-500/30 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-    >
-        {isLoading ? (
-            <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processing...
-            </>
-        ) : (
-            <>
-                {state === "login" ? "Sign In" : "Create Account"}
-                <ArrowRight className="w-5 h-5" />
-            </>
-        )}
-    </button>
 
     // Generate random icons with different movement directions (Right to Left, Left to Right, etc.)
     const bgIcons = [
@@ -140,61 +201,121 @@ const Login = () => {
                     >
                         <div className='text-center mb-10'>
                             {/* Logo */}
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white mb-6 shadow-lg shadow-indigo-200">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 text-white mb-6 shadow-lg shadow-indigo-100">
                                 <Sparkles className="w-6 h-6" />
                             </div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent tracking-tight mb-2">
-                                {state === "login" ? "Welcome back" : "Create an account"}
+                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">
+                                {showOTP ? "Verify Email" : state === "login" ? "Welcome back" : "Create an account"}
                             </h1>
                             <p className="text-slate-500 text-base">
-                                {state === "login" ? "Enter your details to access your account." : "Start your journey to a better career."}
+                                {showOTP ? `Enter the 6-digit code sent to ${verificationEmail}` : state === "login" ? "Enter your details to access your account." : "Start your journey to a better career."}
                             </p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            {state !== "login" && (
-                                <div className="relative group">
-                                    <User2Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        placeholder="Full Name"
-                                        className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        required
-                                    />
+                            {showOTP ? (
+                                <div className="space-y-5">
+                                    <div className="relative group">
+                                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                        <input
+                                            type="text"
+                                            name="otp"
+                                            placeholder="6-digit OTP"
+                                            maxLength={6}
+                                            className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold tracking-[8px] text-center text-slate-900 placeholder:text-slate-400 placeholder:tracking-normal shadow-sm"
+                                            value={formData.otp}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center px-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowOTP(false)}
+                                            className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
+                                        >
+                                            Change email
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleResendOTP}
+                                            disabled={isLoading}
+                                            className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors disabled:opacity-50"
+                                        >
+                                            Resend OTP
+                                        </button>
+                                    </div>
                                 </div>
+                            ) : (
+                                <>
+                                    {state !== "login" && (
+                                        <>
+                                            <div className="relative group">
+                                                <User2Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                                <input
+                                                    type="text"
+                                                    name="name"
+                                                    placeholder="Full Name"
+                                                    className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+                                                    value={formData.name}
+                                                    onChange={handleChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="relative group">
+                                                <Briefcase className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    placeholder="Phone Number"
+                                                    className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+                                                    value={formData.phone}
+                                                    onChange={handleChange}
+                                                    required
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="relative group">
+                                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            placeholder="Email address"
+                                            className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="relative group">
+                                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            placeholder="Password"
+                                            className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </>
                             )}
 
-                            <div className="relative group">
-                                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Email address"
-                                    className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="relative group">
-                                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                <input
-                                    type="password"
-                                    name="password"
-                                    placeholder="Password"
-                                    className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            {state === "login" && (
-                                <div className="flex justify-end px-2">
+                            {state === "login" && !showOTP && (
+                                <div className="flex justify-between items-center px-2">
+                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        />
+                                        <span className="text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
+                                    </label>
                                     <button type="button" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Forget password?</button>
                                 </div>
                             )}
@@ -202,7 +323,7 @@ const Login = () => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 rounded-full transition-all shadow-lg shadow-indigo-500/30 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-full transition-all shadow-lg shadow-indigo-100 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? (
                                     <>
@@ -211,7 +332,7 @@ const Login = () => {
                                     </>
                                 ) : (
                                     <>
-                                        {state === "login" ? "Sign In" : "Create Account"}
+                                        {showOTP ? "Verify & Continue" : state === "login" ? "Sign In" : "Create Account"}
                                         <ArrowRight className="w-5 h-5" />
                                     </>
                                 )}

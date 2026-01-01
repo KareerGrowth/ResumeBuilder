@@ -19,41 +19,47 @@ const getOrCreateCredit = async (req) => {
     // If not, we can try both or use a flag.
 
     const isMongoId = /^[0-9a-fA-F]{24}$/.test(userId);
-    // Note: Some MySQL IDs could theoretically match this regex, but unlikely if they are UUIDs.
-    // Let's check `mysqlAuthService` if we suspect it's MySQL.
-
-    // For Safety: Let's assume if it fails Mongo check, try MySQL.
 
     let credit = await Credit.findOne({ userId });
 
     if (credit) return { type: 'mongo', data: credit };
 
-    // If not in Mongo, check MySQL
-    const mysqlCredit = await mysqlAuthService.getCredit(userId);
-    if (mysqlCredit) {
-        // Map MySQL snake_case to camelCase matches the Credit model roughly
-        return {
-            type: 'mysql',
-            data: {
-                userId: mysqlCredit.user_id,
-                planType: mysqlCredit.plan_type,
-                totalCredits: mysqlCredit.total_credits,
-                usedCredits: mysqlCredit.used_credits,
-                expiresAt: mysqlCredit.expires_at,
-                // Helper to save methods needed below
+    // If not in Mongo, check MySQL (IF AVAILABLE)
+    try {
+        const mysqlAvailable = await mysqlAuthService.isAvailable();
+        if (mysqlAvailable) {
+            const mysqlCredit = await mysqlAuthService.getCredit(userId);
+            if (mysqlCredit) {
+                return {
+                    type: 'mysql',
+                    data: {
+                        userId: mysqlCredit.user_id,
+                        planType: mysqlCredit.plan_type,
+                        totalCredits: mysqlCredit.total_credits,
+                        usedCredits: mysqlCredit.used_credits,
+                        expiresAt: mysqlCredit.expires_at,
+                    }
+                };
             }
-        };
+        } else {
+            console.warn('[Credits] MySQL service unavailable - defaulting to MongoDB logic');
+        }
+    } catch (error) {
+        console.error('[Credits] Non-critical error checking MySQL credits:', error);
     }
 
     // Determine where to create new credit (default)
-    // If we have a user in Mongo Users collection, create there.
-    // If valid ObjectId, assume Mongo.
-
     const threeMonthsFromNow = new Date();
     threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
 
-    if (isMongoId) {
-        // Create in Mongo
+    // If it's a Mongo ID OR MySQL is unavailable, create in Mongo
+    // This ensures local development always works with Mongo
+    const mysqlAvailable = await (async () => {
+        try { return await mysqlAuthService.isAvailable(); }
+        catch { return false; }
+    })();
+
+    if (isMongoId || !mysqlAvailable) {
         const newCredit = await Credit.create({
             userId,
             planType: 'Free',
@@ -71,7 +77,6 @@ const getOrCreateCredit = async (req) => {
             usedCredits: 0,
             expiresAt: threeMonthsFromNow
         });
-        // Remap for consistency
         return {
             type: 'mysql',
             data: {

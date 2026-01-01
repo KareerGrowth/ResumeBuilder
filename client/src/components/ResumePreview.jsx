@@ -41,7 +41,11 @@ const ResumePreview = ({ data, template, accentColor, classes = "" }) => {
   };
 
   const renderTemplate = () => {
-    switch (template) {
+    // Extract base template name (e.g., "minimal-image" from "minimal-image-12345")
+    // This regex removes the final hyphen and 5 digits
+    const baseTemplate = template?.replace(/-\d{5}$/, "") || "classic";
+
+    switch (baseTemplate) {
       case "modern":
         return <ModernTemplate data={mergedData} accentColor={accentColor} />;
       case "minimal":

@@ -279,14 +279,14 @@ const ResumeBuilder = () => {
             <div className='relative w-full'>
               <div className='absolute bottom-3 left-0 right-0 flex items-center justify-end gap-2'>
                 {resumeData.public && (
-                  <button onClick={handleShare} className='flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 rounded-lg ring-blue-300 hover:ring transition-colors'>
+                  <button onClick={handleShare} className='flex items-center p-2 px-4 gap-2 text-xs bg-blue-100 text-blue-600 rounded-lg ring-blue-300 hover:ring transition-colors'>
                     <Share2Icon className='size-4' /> Share
                   </button>
                 )}
                 <button
                   onClick={changeResumeVisibility}
                   disabled={isToggling}
-                  className='flex items-center p-2 px-4 gap-2 text-xs bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600 ring-purple-300 rounded-lg hover:ring transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
+                  className='flex items-center p-2 px-4 gap-2 text-xs bg-purple-100 text-purple-600 ring-purple-300 rounded-lg hover:ring transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
                 >
                   {isToggling ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -298,7 +298,7 @@ const ResumeBuilder = () => {
                 <button
                   onClick={downloadResume}
                   disabled={isDownloading}
-                  className='flex items-center gap-2 px-6 py-2 text-xs bg-gradient-to-br from-green-100 to-green-200 text-green-600 rounded-lg ring-green-300 hover:ring transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
+                  className='flex items-center gap-2 px-6 py-2 text-xs bg-green-100 text-green-600 rounded-lg ring-green-300 hover:ring transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
                 >
                   {isDownloading ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className='size-4' />}
                   {isDownloading ? 'Downloading...' : 'Download'}

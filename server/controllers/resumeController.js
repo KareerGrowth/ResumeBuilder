@@ -1,5 +1,6 @@
 import imagekit from "../configs/imageKit.js";
 import Resume from "../models/Resume.js";
+import Template from "../models/Template.js";
 import fs from 'fs';
 
 
@@ -166,35 +167,22 @@ export const updateResume = async (req, res) => {
 export const getTemplates = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        // Default limit to 0 (all) to maintain backward compatibility for Dashboard
-        // If limit is provided in query, use it.
         const limit = parseInt(req.query.limit) || 0;
 
-        const allTemplates = [
-            { id: "classic", name: "Classic" },
-            { id: "modern", name: "Modern" },
-            { id: "minimal-image", name: "Minimal Image" },
-            { id: "minimal", name: "Minimal" },
-            { id: "executive", name: "Executive" },
-            { id: "academic", name: "Academic" },
-            { id: "ats", name: "ATS Friendly" },
-            { id: "ats-compact", name: "ATS Compact" },
-            // Duplicating for demo purposes as user requested 12 logic with limited real templates
-            { id: "classic", name: "Classic (Copy)" },
-            { id: "modern", name: "Modern (Copy)" },
-            { id: "minimal-image", name: "Minimal Image (Copy)" },
-            { id: "minimal", name: "Minimal (Copy)" },
-        ];
+        let query = { isActive: true };
+        const totalTemplates = await Template.countDocuments(query);
 
-        let templates = allTemplates;
-        const totalTemplates = allTemplates.length;
+        let templates;
         let totalPages = 1;
 
         if (limit > 0) {
-            const startIndex = (page - 1) * limit;
-            const endIndex = page * limit;
-            templates = allTemplates.slice(startIndex, endIndex);
+            templates = await Template.find(query)
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .sort({ createdAt: 1 });
             totalPages = Math.ceil(totalTemplates / limit);
+        } else {
+            templates = await Template.find(query).sort({ createdAt: 1 });
         }
 
         return res.status(200).json({
