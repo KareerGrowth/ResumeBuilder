@@ -6,7 +6,7 @@ import { FileText, Layout, Upload, CheckCircle, ChevronDown, User, LogOut, Menu,
 import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
 
-const Navbar = () => {
+const Navbar = ({ onOpenUpload }) => {
   const { user } = useSelector(state => state.auth)
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -24,10 +24,10 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path
 
   const navLinks = [
-    { name: 'Projects', href: '/app/projects', icon: Layout },
-    { name: 'Upload', href: '#upload', icon: Upload }, // Using hash for now as route undefined
-    { name: 'Templates', href: '#templates', icon: FileText }, // Using hash for now
-    { name: 'Home', href: '/app', icon: Home }, // Updated to point to Dashboard
+    { name: 'Home', href: '/app', icon: Home },
+    { name: 'Templates', href: '#templates', icon: FileText },
+    { name: 'Project', href: '/app/projects', icon: Layout },
+    { name: 'Upload Resume', href: '#upload', icon: Upload },
   ]
 
   return (
@@ -46,6 +46,12 @@ const Navbar = () => {
             <Link
               key={item.name}
               to={item.href}
+              onClick={(e) => {
+                if (item.name === 'Upload Resume' && onOpenUpload) {
+                  e.preventDefault()
+                  onOpenUpload()
+                }
+              }}
               className={clsx(
                 "text-sm font-medium transition-colors flex items-center gap-2",
                 isActive(item.href) ? "text-blue-600" : "text-slate-600 hover:text-blue-600"
@@ -56,22 +62,26 @@ const Navbar = () => {
           ))}
 
           {/* Check ATS Score - Special Link */}
-          <Link
-            to="/app/ats-check"
-            className={clsx(
-              "text-sm font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors",
-              isActive('/app/ats-check')
-                ? "text-emerald-700 bg-emerald-100"
-                : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-700"
-            )}
-          >
-            <CheckCircle className="w-4 h-4" />
-            Check ATS Score
-          </Link>
+
         </div>
 
         {/* Right Side Actions */}
         <div className="hidden md:flex items-center gap-6">
+          {/* Check ATS Score - Special Link */}
+          <Link
+            to="/app/ats-check"
+            className="relative overflow-hidden text-sm font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-emerald-700 bg-emerald-50 hover:text-emerald-800"
+          >
+            {/* Pulsing Background */}
+            <div className={`absolute inset-0 bg-emerald-200/50 animate-pulse ${isActive('/app/ats-check') ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`} />
+
+            {/* Content (Solid) */}
+            <div className="relative z-10 flex items-center gap-1.5">
+              <CheckCircle className="w-4 h-4" />
+              Check ATS Score
+            </div>
+          </Link>
+
           {/* Removed Resume Builder Button as requested */}
 
           {/* Profile Dropdown */}
