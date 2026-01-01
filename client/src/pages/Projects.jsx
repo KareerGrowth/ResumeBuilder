@@ -68,14 +68,22 @@ const Projects = () => {
         }
     }
 
-    const deleteResume = async (resumeId) => {
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+    const [resumeToDelete, setResumeToDelete] = useState(null)
+
+    const initiateDelete = (resumeId) => {
+        setResumeToDelete(resumeId)
+        setDeleteModalOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!resumeToDelete) return
         try {
-            const confirm = window.confirm('Are you sure you want to delete this resume?')
-            if (confirm) {
-                const { data } = await api.delete(`/api/resumes/delete/${resumeId}`, { headers: { Authorization: token } })
-                setAllResumes(allResumes.filter(resume => resume._id !== resumeId))
-                toast.success(data.message)
-            }
+            const { data } = await api.delete(`/api/resumes/delete/${resumeToDelete}`, { headers: { Authorization: token } })
+            setAllResumes(allResumes.filter(resume => resume._id !== resumeToDelete))
+            toast.success(data.message)
+            setDeleteModalOpen(false)
+            setResumeToDelete(null)
         } catch (error) {
             toast.error(error?.response?.data?.message || error.message)
         }
@@ -146,11 +154,11 @@ const Projects = () => {
                                                 </p>
                                             </div>
 
-                                            <div className='flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200'>
+                                            <div className='flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200'>
                                                 <button onClick={(e) => { e.stopPropagation(); setEditResumeId(resume._id); setTitle(resume.title) }} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all" title="Rename">
                                                     <PencilIcon className="size-4" />
                                                 </button>
-                                                <button onClick={(e) => { e.stopPropagation(); deleteResume(resume._id) }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Delete">
+                                                <button onClick={(e) => { e.stopPropagation(); initiateDelete(resume._id) }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Delete">
                                                     <TrashIcon className="size-4" />
                                                 </button>
                                             </div>
@@ -177,6 +185,38 @@ const Projects = () => {
                     </form>
                 )
                 }
+
+                {/* Delete Confirmation Modal */}
+                {deleteModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setDeleteModalOpen(false)}>
+                        <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden scale-100 animate-in zoom-in-95 duration-200">
+                            <div className="p-6 text-center">
+                                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <TrashIcon className="w-6 h-6 text-red-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Project?</h3>
+                                <p className="text-slate-500 text-sm mb-6">
+                                    This action cannot be undone. This project will be permanently removed from your account.
+                                </p>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setDeleteModalOpen(false)}
+                                        className="flex-1 py-2.5 px-4 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDelete}
+                                        className="flex-1 py-2.5 px-4 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </div>
