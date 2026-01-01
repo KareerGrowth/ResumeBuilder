@@ -42,7 +42,7 @@ const UploadResumeModal = ({ isOpen, onClose }) => {
             setTitle('')
             setResume(null)
             onClose() // Close modal on success
-            navigate(`/app/builder/${data.resumeId}`)
+            navigate('/app/templates', { state: { resumeId: data.resumeId } })
         } catch (error) {
             if (error.response?.status === 403) {
                 setShowPricing(true);

@@ -148,7 +148,7 @@ const Dashboard = () => {
       setTitle('')
       setResume(null)
       setShowUploadResume(false)
-      navigate(`/app/builder/${data.resumeId}`)
+      navigate('/app/templates', { state: { resumeId: data.resumeId } })
     } catch (error) {
       if (error.response?.status === 403) {
         setShowPricing(true);

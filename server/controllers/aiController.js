@@ -100,44 +100,44 @@ export const uploadResume = async (req, res) => {
         Provide data in the following JSON format with no additional text before or after:
 
         {
-        professional_summary: { type: String, default: '' },
-        skills: [{ type: String }],
-        personal_info: {
-            image: {type: String, default: '' },
-            full_name: {type: String, default: '' },
-            profession: {type: String, default: '' },
-            email: {type: String, default: '' },
-            phone: {type: String, default: '' },
-            location: {type: String, default: '' },
-            linkedin: {type: String, default: '' },
-            website: {type: String, default: '' },
+        "professional_summary": "Extracted professional summary text...",
+        "skills": ["Skill 1", "Skill 2"],
+        "personal_info": {
+            "image": "URL or empty string",
+            "full_name": "Full Name",
+            "profession": "Software Engineer",
+            "email": "email@example.com",
+            "phone": "Phone Number",
+            "location": "City, Country",
+            "linkedin": "LinkedIn Profile URL",
+            "website": "Portfolio URL"
         },
-        experience: [
+        "experience": [
             {
-                company: { type: String },
-                position: { type: String },
-                start_date: { type: String },
-                end_date: { type: String },
-                description: { type: String },
-                is_current: { type: Boolean },
+                "company": "Company Name",
+                "position": "Job Title",
+                "start_date": "Start Date",
+                "end_date": "End Date or Present",
+                "description": "Job description and achievements...",
+                "is_current": true
             }
         ],
-        project: [
+        "project": [
             {
-                name: { type: String },
-                type: { type: String },
-                description: { type: String },
+                "name": "Project Name",
+                "type": "Web App / Mobile App / etc",
+                "description": "Project description..."
             }
         ],
-        education: [
+        "education": [
             {
-                institution: { type: String },
-                degree: { type: String },
-                field: { type: String },
-                graduation_date: { type: String },
-                gpa: { type: String },
+                "institution": "University Name",
+                "degree": "Degree Name",
+                "field": "Field of Study",
+                "graduation_date": "Year",
+                "gpa": "GPA Score"
             }
-        ],          
+        ]
         }
         `;
 

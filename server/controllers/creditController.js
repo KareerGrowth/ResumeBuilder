@@ -63,7 +63,7 @@ const getOrCreateCredit = async (req) => {
         const newCredit = await Credit.create({
             userId,
             planType: 'Free',
-            totalCredits: 2,
+            totalCredits: 50,
             usedCredits: 0,
             expiresAt: threeMonthsFromNow
         });
@@ -73,7 +73,7 @@ const getOrCreateCredit = async (req) => {
         const newCredit = await mysqlAuthService.createCredit({
             userId,
             planType: 'Free',
-            totalCredits: 2,
+            totalCredits: 50,
             usedCredits: 0,
             expiresAt: threeMonthsFromNow
         });
@@ -82,7 +82,7 @@ const getOrCreateCredit = async (req) => {
             data: {
                 userId,
                 planType: 'Free',
-                totalCredits: 2,
+                totalCredits: 50,
                 usedCredits: 0,
                 expiresAt: threeMonthsFromNow
             }
@@ -94,6 +94,23 @@ const getOrCreateCredit = async (req) => {
 export const checkCredits = async (req, res) => {
     try {
         const { type, data: credit } = await getOrCreateCredit(req);
+
+        // AUTO-UPGRADE LEGACY ACCOUNTS
+        if (credit.totalCredits < 10) {
+            credit.totalCredits = 50;
+            const updatedExpires = new Date();
+            updatedExpires.setMonth(updatedExpires.getMonth() + 3);
+            credit.expiresAt = updatedExpires;
+
+            if (type === 'mongo') {
+                await credit.save();
+            } else {
+                await mysqlAuthService.updateCredit(credit.userId, {
+                    totalCredits: 50,
+                    expiresAt: updatedExpires
+                });
+            }
+        }
 
         const isExpired = new Date() > new Date(credit.expiresAt);
         const hasBalance = credit.usedCredits < credit.totalCredits;
@@ -113,6 +130,25 @@ export const checkCredits = async (req, res) => {
 export const deductCredit = async (req, res) => {
     try {
         const { type, data: credit } = await getOrCreateCredit(req);
+
+        // AUTO-UPGRADE LEGACY ACCOUNTS
+        if (credit.totalCredits < 10) {
+            credit.totalCredits = 50;
+            const updatedExpires = new Date();
+            updatedExpires.setMonth(updatedExpires.getMonth() + 3);
+            credit.expiresAt = updatedExpires;
+
+            if (type === 'mongo') {
+                // For Mongo document, we just save the instance
+                await credit.save();
+            } else {
+                // For MySQL, we must call update service
+                await mysqlAuthService.updateCredit(credit.userId, {
+                    totalCredits: 50,
+                    expiresAt: updatedExpires
+                });
+            }
+        }
 
         if (new Date() > new Date(credit.expiresAt)) {
             return res.status(403).json({ message: 'Credits expired. Please upgrade.' });
