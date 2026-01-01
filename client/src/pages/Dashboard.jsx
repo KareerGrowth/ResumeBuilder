@@ -17,6 +17,7 @@ import ExecutiveTemplate from '../assets/templates/ExecutiveTemplate'
 import AcademicTemplate from '../assets/templates/AcademicTemplate'
 import ATS from '../assets/templates/ATS'
 import ATS1 from '../assets/templates/ATS1'
+import DashboardHero from '../components/DashboardHero'
 
 const Dashboard = () => {
 
@@ -167,72 +168,29 @@ const Dashboard = () => {
 
   return (
     <div>
-      <div className='w-full px-4 md:px-8 py-8'>
+      <div className='w-full px-2 md:px-8 py-8'>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
-          <div>
-            <p className='text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 transition-all'>Welcome back, {user?.name}</p>
-            <div className="flex items-center gap-3 mt-2 text-xs md:text-sm text-slate-500 font-medium transition-all">
-              <span>{credits?.planType || 'Free'} Plan</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-              <span>{credits ? (credits.totalCredits - credits.usedCredits) : 0} Credits remaining</span>
-            </div>
-          </div>
-
-          <div className='flex gap-3'>
-            <button
-              onClick={() => navigate('/app/ats-check')}
-              className="bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:text-slate-900 px-4 py-2 md:px-5 md:py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 text-sm md:text-base"
-            >
-              <CheckCircle className="w-4 h-4" />
-              Check ATS Score
-            </button>
-            <button
-              onClick={() => setShowPricing(true)}
-              className="bg-slate-900 hover:bg-black text-white px-4 py-2 md:px-5 md:py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 text-sm md:text-base"
-            >
-              <Crown className="w-4 h-4" />
-              Upgrade Plan
-            </button>
-          </div>
-        </div>
-
-        {/* Upload Resume Banner */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between mb-12 transition-all">
-          <div>
-            <h2 className="text-lg md:text-xl font-semibold mb-2 text-slate-900 transition-all">Have a resume already?</h2>
-            <p className="text-sm md:text-base text-slate-500 max-w-lg transition-all">Upload your existing PDF resume and let our AI format it instantly.</p>
-          </div>
-          <button
-            onClick={() => checkCreditsAndAction(() => setShowUploadResume(true))}
-            className="mt-6 md:mt-0 bg-white border border-slate-200 text-slate-900 px-5 py-2 md:px-6 md:py-2.5 rounded-lg font-medium hover:border-slate-400 transition-all flex items-center gap-2 text-sm md:text-base"
-          >
-            <UploadCloudIcon className='w-4 h-4' />
-            Upload Resume
-          </button>
-        </div>
+        <DashboardHero onCreateResume={() => setShowCreateResume(true)} />
 
 
-        {/* Visual Separator */}
-        <div className="flex items-center gap-4 mb-8">
-          <span className="text-slate-400 font-medium uppercase text-[10px] md:text-xs tracking-widest transition-all">Or Start From Scratch</span>
-          <div className="h-px bg-slate-100 flex-1"></div>
-        </div>
+
+
+
 
 
         <h3 className="text-lg md:text-xl font-semibold text-slate-900 mb-6 transition-all">Choose a Template</h3>
 
         {/* Template Grid: Live Previews */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8 mb-8'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 max-w-5xl mx-auto'>
           {isTemplatesLoading ? (
             // Template Skeleton
             [1, 2, 3, 4].map((n) => (
-              <div key={n} className='aspect-[210/297] bg-white rounded-xl border border-slate-100 overflow-hidden animate-pulse'>
+              <div key={n} className='aspect-[210/260] bg-white rounded-xl border border-slate-100 overflow-hidden animate-pulse'>
                 <div className="flex-1 w-full h-full bg-slate-50"></div>
               </div>
             ))
           ) : (
-            templates.map((t, index) => {
+            templates.slice(0, 6).map((t, index) => {
               const TemplateComponent = templateComponents[t.id] || ClassicTemplate;
               const isRecommended = ['classic', 'modern'].includes(t.id);
 
@@ -240,28 +198,19 @@ const Dashboard = () => {
                 <button
                   key={t.id}
                   onClick={() => checkCreditsAndAction(() => { setSelectedTemplate(t.id); setShowCreateResume(true); })}
-                  className='aspect-[210/297] bg-white rounded-xl border border-slate-200 hover:border-slate-800 transition-all duration-200 flex flex-col group cursor-pointer relative overflow-hidden'
+                  className='aspect-[210/260] bg-white rounded-xl border border-slate-200 hover:border-slate-800 transition-all duration-200 flex flex-col group cursor-pointer relative overflow-hidden shadow-[0_0_20px_rgba(148,163,184,0.15)]'
                 >
                   {/* Recommended Badge */}
                   {isRecommended && (
-                    <div className="absolute top-3 right-3 z-30 bg-slate-900 text-white text-[10px] font-medium px-2 py-1 rounded shadow-sm">
+                    <div className="absolute top-3 right-3 z-30 bg-indigo-600 text-white text-[10px] font-medium px-2 py-1 rounded shadow-sm">
                       Recommended
                     </div>
                   )}
 
-                  {/* Preview Container */}
-                  <div className="flex-1 w-full bg-slate-50 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none select-none bg-white shadow-sm flex flex-col">
-                      {/* 
-                          We use a transform scale approach to fit the resume in the card.
-                          Since resumes are A4 (210mm x 297mm), we need to scale them to fit the container.
-                          However, for a fluid responsive grid, a fixed scale might be tricky.
-                          CSS container queries or a simple extensive transform might be best.
-                          For now, we will use a viewbox-like approach or just simple scaling.
-                       */}
-                      <div className="w-[210mm] origin-top-left transform scale-[0.25] sm:scale-[0.3] md:scale-[0.35] lg:scale-[0.28] xl:scale-[0.32] transition-transform duration-300">
-                        <TemplateComponent data={dummyResumeData[0]} accentColor="#000000" />
-                      </div>
+                  {/* Preview Container matching Projects.jsx */}
+                  <div className="flex-1 w-full bg-slate-50 relative overflow-hidden group-hover:bg-slate-100 transition-colors">
+                    <div className='absolute top-0 left-1/2 -translate-x-1/2 w-[210mm] origin-top transform scale-[0.45] lg:scale-[0.32] pointer-events-none select-none bg-white shadow-lg m-0 lg:my-4 min-h-[297mm]'>
+                      <TemplateComponent data={dummyResumeData[0]} accentColor="#4B5563" />
                     </div>
                   </div>
 
@@ -300,7 +249,7 @@ const Dashboard = () => {
                   <span>This will cost 1 credit</span>
                 </div>
 
-                <button disabled={isLoading} className='w-full py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-black transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
+                <button disabled={isLoading} className='w-full py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed'>
                   {isLoading && <LoaderCircleIcon className="animate-spin w-4 h-4" />}
                   {isLoading ? 'Creating...' : 'Create Resume'}
                 </button>
