@@ -5,7 +5,7 @@ import { Mic, ArrowUpRight, ArrowDownLeft, Repeat, MoreVertical } from 'lucide-r
 
 const DashboardHero = ({ onCreateResume }) => {
     return (
-        <section className="relative w-full rounded-3xl bg-white overflow-hidden font-[Poppins] mb-6 border border-slate-100 shadow-[0_0_30px_rgba(148,163,184,0.15)]">
+        <section className="relative w-full font-[Poppins] mb-6">
 
             <div className="w-full grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4 lg:gap-8 items-center p-8 lg:p-12">
 

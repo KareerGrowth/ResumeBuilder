@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { Menu, X, ArrowRight, Search, FileText } from 'lucide-react';
+import { Menu, X, ArrowRight, Search, FileText, Sparkles, MessageSquare, DollarSign, Layout, User, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
@@ -99,73 +100,119 @@ const Navbar = () => {
                 </div>
             </motion.nav>
 
-            {/* Mobile Menu Overlay */}
-            <AnimatePresence>
-                {mobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, x: '100%' }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: '100%' }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="fixed inset-0 z-[60] bg-white flex flex-col p-6 md:hidden"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
-                                    <FileText className="w-5 h-5" />
-                                </div>
-                                <span className="text-xl font-bold text-slate-900">ResumeBuilder</span>
-                            </div>
-                            <button
+            {/* Mobile Menu Sidebar - Portaled to Body */}
+            {createPortal(
+                <AnimatePresence>
+                    {mobileMenuOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="p-2 text-slate-500 hover:bg-slate-100 rounded-full"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
+                                className="fixed inset-0 bg-black/50 z-[100] md:hidden"
+                            />
 
-                        <div className="flex flex-col gap-6">
-                            {navLinks.map((link) => (
-                                <a
-                                    key={link.name}
-                                    href={link.href}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-lg font-medium text-slate-700 hover:text-indigo-600"
-                                >
-                                    {link.name}
-                                </a>
-                            ))}
-                            <hr className="border-slate-100" />
-                            {user ? (
-                                <Link
-                                    to="/app"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-center px-6 py-3 rounded-full bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors"
-                                >
-                                    Go to Dashboard
-                                </Link>
-                            ) : (
-                                <>
-                                    <Link
-                                        to="/app?state=login"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className="text-center py-2 text-slate-600 font-medium hover:text-indigo-600"
-                                    >
-                                        Login
-                                    </Link>
-                                    <Link
-                                        to="/app?state=register"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className="text-center px-6 py-3 rounded-full bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors"
-                                    >
-                                        Get Started Free
-                                    </Link>
-                                </>
-                            )}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            {/* Sidebar */}
+                            <motion.div
+                                initial={{ x: '100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '100%' }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[101] md:hidden font-[Outfit] flex flex-col rounded-l-3xl overflow-hidden"
+                            >
+
+                                {/* Indigo Guest Header */}
+                                <div className="bg-indigo-600 p-8 pt-12 pb-12 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 z-10">
+                                        <button
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="p-1 text-white/70 hover:text-white transition-colors"
+                                        >
+                                            <X className="w-6 h-6" />
+                                        </button>
+                                    </div>
+
+                                    {/* Decorative Circles */}
+                                    <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                                    <div className="absolute bottom-[-10%] left-[-10%] w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+
+                                    <div className="flex flex-col items-center text-center relative z-0">
+                                        <div className="relative mb-4">
+                                            <img
+                                                src={`https://ui-avatars.com/api/?name=Guest&background=fff&color=4F46E5`}
+                                                alt="Guest"
+                                                className="w-20 h-20 rounded-full border-4 border-white/30 shadow-xl"
+                                            />
+                                            <div className="absolute bottom-0 right-0 w-5 h-5 bg-white border-2 border-indigo-600 rounded-full"></div>
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white mb-1">Welcome Guest</h3>
+                                        <p className="text-indigo-100 text-sm">Explore premium resumes</p>
+                                    </div>
+                                </div>
+
+                                {/* Nav Links */}
+                                <div className="flex-1 py-6 px-4 overflow-y-auto">
+                                    <div className="space-y-2">
+                                        <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Menu</p>
+
+                                        {navLinks.map((link) => {
+                                            // Mapping icons based on link name
+                                            let Icon = Layout;
+                                            if (link.name === 'Dashboard') Icon = Layout;
+                                            if (link.name === 'Templates') Icon = FileText;
+                                            if (link.name === 'Features') Icon = Sparkles;
+                                            if (link.name === 'Reviews') Icon = MessageSquare;
+                                            if (link.name === 'Pricing') Icon = DollarSign;
+
+                                            return (
+                                                <a
+                                                    key={link.name}
+                                                    href={link.href}
+                                                    className="flex items-center justify-between px-4 py-3.5 text-base font-medium text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all group"
+                                                    onClick={() => setMobileMenuOpen(false)}
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <Icon className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                                                        {link.name}
+                                                    </div>
+                                                </a>
+                                            );
+                                        })}
+
+                                        <div className="h-px bg-slate-100 my-4 mx-4"></div>
+
+                                        <Link
+                                            to="/app?state=login"
+                                            className="flex items-center justify-between px-4 py-3.5 text-base font-medium text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all group"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <LogIn className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                                                Login
+                                            </div>
+                                        </Link>
+
+                                        <Link
+                                            to="/app?state=register"
+                                            className="flex items-center justify-between px-4 py-3.5 text-base font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all group mt-2"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <ArrowRight className="w-5 h-5 text-indigo-600" />
+                                                Get Started
+                                            </div>
+                                        </Link>
+
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </>
     );
 };

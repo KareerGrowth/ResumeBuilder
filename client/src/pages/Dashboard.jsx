@@ -182,13 +182,13 @@ const Dashboard = () => {
         <h3 className="text-lg md:text-xl font-semibold text-slate-900 mb-6 transition-all">Choose a Template</h3>
 
         {/* Template Grid: Live Previews */}
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 max-w-5xl mx-auto'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-8 max-w-7xl mx-auto'>
           {isTemplatesLoading ? (
             <div className="col-span-full flex items-center justify-center py-20">
               <img src={sandGif} alt="Loading..." className="w-16 h-16 object-contain" />
             </div>
           ) : (
-            templates.slice(0, 6).map((t, index) => {
+            templates.slice(0, 8).map((t, index) => {
               const TemplateComponent = templateComponents[t.id] || ClassicTemplate;
               const isRecommended = ['classic', 'modern'].includes(t.id);
 
