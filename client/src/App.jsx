@@ -9,6 +9,7 @@ import Preview from './pages/Preview'
 import Login from './pages/Login'
 import ATSCheckerPage from './pages/ATSCheckerPage'
 import ProfilePage from './pages/ProfilePage'
+import TemplatesPage from './pages/TemplatesPage'
 import { useDispatch } from 'react-redux'
 import api from './configs/api'
 import { login, setLoading } from './app/features/authSlice'
@@ -48,6 +49,7 @@ const App = () => {
 
         <Route path='app' element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path='templates' element={<TemplatesPage />} />
           <Route path='projects' element={<Projects />} />
           <Route path='builder/:resumeId' element={<ResumeBuilder />} />
           <Route path='ats-check' element={<ATSCheckerPage />} />

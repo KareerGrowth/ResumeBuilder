@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UploadCloud, FileText, CheckCircle, XCircle, AlertCircle, Loader2, Sparkles, AlertTriangle, ArrowLeft, Target, Award, ChevronDown, ChevronRight, LayoutList, RefreshCw, Wand2, Info, Check, X, HelpCircle, ChevronRightSquare } from 'lucide-react';
+import sandGif from '../assets/sand.gif'
 import api from '../configs/api';
 import { useSelector } from 'react-redux';
 import pdfToText from 'react-pdftotext';
@@ -253,7 +254,7 @@ ${project.skills?.map(s => s.name || s).join(', ')}
                                 <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar space-y-2">
                                     {isLoadingProjects ? (
                                         <div className="flex flex-col items-center justify-center py-8">
-                                            <Loader2 className="w-6 h-6 text-blue-600 animate-spin mb-2" />
+                                            <img src={sandGif} alt="Loading..." className="w-12 h-12 object-contain mb-2" />
                                             <p className="text-xs text-slate-500 font-medium">Loading Projects...</p>
                                         </div>
                                     ) : (projects.map(p => (
@@ -284,7 +285,7 @@ ${project.skills?.map(s => s.name || s).join(', ')}
                             <div className="p-5 pb-2">
                                 {analyzing && !analysisResult ? (
                                     <div className="h-40 flex items-center justify-center flex-col gap-4 p-6 bg-slate-50 rounded-xl border border-slate-100">
-                                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                                        <img src={sandGif} alt="Analyzing..." className="w-12 h-12 object-contain" />
                                         <div className="text-center">
                                             <h3 className="font-bold text-slate-800 mb-0.5 text-sm">Analyzing...</h3>
                                             <p className="text-[10px] text-slate-500">Processing resume...</p>
@@ -326,7 +327,7 @@ ${project.skills?.map(s => s.name || s).join(', ')}
                             {/* Loading Overlay */}
                             {analyzing && !analysisResult && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-50">
-                                    <Loader2 className="w-16 h-16 text-blue-600 animate-spin mb-8" />
+                                    <img src={sandGif} alt="Analyzing..." className="w-20 h-20 object-contain mb-8" />
                                     <h3 className="text-2xl font-bold text-slate-800">Analyzing your resume...</h3>
                                     <p className="text-slate-500 mt-2 text-lg">Comparing against industry standards.</p>
                                 </div>

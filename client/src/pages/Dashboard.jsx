@@ -1,4 +1,5 @@
 import { LayoutTemplate, LoaderCircleIcon, UploadCloudIcon, XIcon, Crown, Sparkles, CheckCircle } from 'lucide-react'
+import sandGif from '../assets/sand.gif'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -183,12 +184,9 @@ const Dashboard = () => {
         {/* Template Grid: Live Previews */}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 max-w-5xl mx-auto'>
           {isTemplatesLoading ? (
-            // Template Skeleton
-            [1, 2, 3, 4].map((n) => (
-              <div key={n} className='aspect-[210/260] bg-white rounded-xl border border-slate-100 overflow-hidden animate-pulse'>
-                <div className="flex-1 w-full h-full bg-slate-50"></div>
-              </div>
-            ))
+            <div className="col-span-full flex items-center justify-center py-20">
+              <img src={sandGif} alt="Loading..." className="w-16 h-16 object-contain" />
+            </div>
           ) : (
             templates.slice(0, 6).map((t, index) => {
               const TemplateComponent = templateComponents[t.id] || ClassicTemplate;

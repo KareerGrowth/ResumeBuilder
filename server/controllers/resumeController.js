@@ -165,7 +165,12 @@ export const updateResume = async (req, res) => {
 // GET: /api/resumes/templates
 export const getTemplates = async (req, res) => {
     try {
-        const templates = [
+        const page = parseInt(req.query.page) || 1;
+        // Default limit to 0 (all) to maintain backward compatibility for Dashboard
+        // If limit is provided in query, use it.
+        const limit = parseInt(req.query.limit) || 0;
+
+        const allTemplates = [
             { id: "classic", name: "Classic" },
             { id: "modern", name: "Modern" },
             { id: "minimal-image", name: "Minimal Image" },
@@ -174,8 +179,30 @@ export const getTemplates = async (req, res) => {
             { id: "academic", name: "Academic" },
             { id: "ats", name: "ATS Friendly" },
             { id: "ats-compact", name: "ATS Compact" },
+            // Duplicating for demo purposes as user requested 12 logic with limited real templates
+            { id: "classic", name: "Classic (Copy)" },
+            { id: "modern", name: "Modern (Copy)" },
+            { id: "minimal-image", name: "Minimal Image (Copy)" },
+            { id: "minimal", name: "Minimal (Copy)" },
         ];
-        return res.status(200).json({ templates })
+
+        let templates = allTemplates;
+        const totalTemplates = allTemplates.length;
+        let totalPages = 1;
+
+        if (limit > 0) {
+            const startIndex = (page - 1) * limit;
+            const endIndex = page * limit;
+            templates = allTemplates.slice(startIndex, endIndex);
+            totalPages = Math.ceil(totalTemplates / limit);
+        }
+
+        return res.status(200).json({
+            templates,
+            currentPage: page,
+            totalPages,
+            totalTemplates
+        })
     } catch (error) {
         return res.status(400).json({ message: error.message })
     }

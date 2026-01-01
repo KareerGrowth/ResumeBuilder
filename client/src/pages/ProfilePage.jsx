@@ -8,6 +8,7 @@ import {
     Award,
     Play,
 } from 'lucide-react';
+import sandGif from '../assets/sand.gif'
 
 const ProfilePage = () => {
     const { user, token } = useSelector(state => state.auth);
@@ -60,7 +61,7 @@ const ProfilePage = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <LoaderCircle className="w-10 h-10 text-indigo-600 animate-spin" />
+                <img src={sandGif} alt="Loading..." className="w-16 h-16 object-contain" />
             </div>
         );
     }
@@ -82,7 +83,7 @@ const ProfilePage = () => {
     const { personal_info, experience, education, skills, certificates, social_links, hobbies, languages, project } = resumeData;
     const fullName = personal_info?.full_name || user?.name || "User Name";
     const profession = personal_info?.profession || "Professional";
-    const avatar = personal_info?.image || user?.avatar || `https://ui-avatars.com/api/?name=${fullName}&background=0D8ABC&color=fff`;
+    const avatar = personal_info?.image || user?.avatar || `https://ui-avatars.com/api/?name=${fullName}&background=4F46E5&color=fff`;
     const summary = resumeData.professional_summary || "No summary provided.";
 
     // Helper to find LinkedIn URL

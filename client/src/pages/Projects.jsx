@@ -1,4 +1,5 @@
 import { FilePenLineIcon, LoaderCircleIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
+import sandGif from '../assets/sand.gif'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -97,9 +98,8 @@ const Projects = () => {
                 </div>
 
                 {isPageLoading ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        <LoaderCircleIcon className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
-                        <p className="text-slate-500 font-medium">Loading Projects...</p>
+                    <div className="col-span-full flex flex-col items-center justify-center py-20">
+                        <img src={sandGif} alt="Loading..." className="w-16 h-16 object-contain" />
                     </div>
                 ) : allResumes.length === 0 ? (
                     <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
@@ -115,7 +115,7 @@ const Projects = () => {
                                 <div key={resume._id} onClick={() => navigate(`/app/builder/${resume._id}`)} className='h-[24rem] bg-white rounded-xl shadow-md border border-slate-200 hover:shadow-2xl hover:border-indigo-400 hover:-translate-y-1 transition-all duration-300 flex flex-col group cursor-pointer relative overflow-hidden ring-0 ring-indigo-200 hover:ring-4 pb-0'>
                                     {/* Preview Section */}
                                     <div className="flex-1 w-full bg-slate-50 relative overflow-hidden group-hover:bg-slate-100 transition-colors">
-                                        <div className='absolute top-0 left-0 w-[210mm] origin-top-left transform scale-[0.28] pointer-events-none select-none bg-white shadow-lg m-4 min-h-[297mm]'>
+                                        <div className='absolute top-0 left-1/2 -translate-x-1/2 w-[210mm] origin-top transform scale-[0.45] lg:scale-[0.28] pointer-events-none select-none bg-white shadow-lg m-0 lg:my-4 min-h-[297mm]'>
                                             {templateId === 'modern' && <ModernTemplate data={resume} accentColor={accentColor} />}
                                             {templateId === 'minimal' && <MinimalTemplate data={resume} accentColor={accentColor} />}
                                             {templateId === 'minimal-image' && <MinimalImageTemplate data={resume} accentColor={accentColor} />}
