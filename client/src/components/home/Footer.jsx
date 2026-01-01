@@ -60,7 +60,7 @@ const Footer = () => {
                 <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
                     <p>© 2025 ResumeBuilder. All rights reserved.</p>
                     <div className="flex items-center gap-1">
-                        Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by the Product Team
+                        Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by SystemMindz
                     </div>
                 </div>
             </div>
