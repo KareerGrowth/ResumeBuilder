@@ -60,9 +60,6 @@ const Navbar = () => {
 
                     {/* Right Side Actions */}
                     <div className="hidden md:flex items-center gap-4">
-                        <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                            <Search className="w-5 h-5" />
-                        </button>
 
                         {user ? (
                             <Link

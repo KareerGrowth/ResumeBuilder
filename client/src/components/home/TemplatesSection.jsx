@@ -68,12 +68,12 @@ const TemplatesSection = () => {
                                     <div className="w-2 h-2 rounded-full bg-yellow-400" />
                                     <div className="w-2 h-2 rounded-full bg-green-400" />
                                 </div>
-                                <div className="space-y-2">
-                                    <div className="h-2 w-3/4 bg-white/20 rounded" />
-                                    <div className="h-2 w-1/2 bg-white/20 rounded" />
+                                <div className="space-y-2 text-indigo-100/80 text-xs font-mono">
+                                    <p>• Spearheaded development of...</p>
+                                    <p>• Increased system efficiency by 25%...</p>
                                 </div>
                                 <div className="mt-4 p-3 bg-indigo-500/50 rounded-lg text-xs font-mono text-indigo-100 typing-cursor">
-                                    Generated 3 bullet points...
+                                    Optimizing keywords...
                                 </div>
                             </div>
                         </div>
@@ -102,12 +102,18 @@ const TemplatesSection = () => {
                         </div>
 
                         <div className="absolute bottom-8 left-6 right-6 space-y-3">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 ${i === 2 ? 'bg-white border-green-200 shadow-md scale-105' : 'bg-slate-100/50 border-transparent opacity-60'}`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${i === 2 ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-400'}`}>
+                            {[
+                                { text: 'Grammar Verified', active: false },
+                                { text: 'ATS Score: 95/100', active: true },
+                                { text: 'Action Verbs Strong', active: false }
+                            ].map((item, i) => (
+                                <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 ${item.active ? 'bg-white border-green-200 shadow-md scale-105' : 'bg-slate-100/50 border-transparent opacity-60'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.active ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-400'}`}>
                                         <CheckCircle className="w-4 h-4" />
                                     </div>
-                                    <div className="h-2 w-24 bg-current opacity-20 rounded" />
+                                    <div className={`text-sm font-medium ${item.active ? 'text-slate-800' : 'text-slate-500'}`}>
+                                        {item.text}
+                                    </div>
                                 </div>
                             ))}
                         </div>
