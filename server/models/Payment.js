@@ -5,6 +5,9 @@ const PaymentSchema = new mongoose.Schema({
     paymentId: { type: String },
     signature: { type: String },
     amount: { type: Number, required: true }, // Amount in paise
+    discountCode: { type: String },
+    originalAmount: { type: Number }, // Original amount in paise
+    discountApplied: { type: Number }, // Percentage applied
     currency: { type: String, default: "INR" },
     status: { type: String, enum: ['created', 'paid', 'failed'], default: 'created' },
     receipt: { type: String },

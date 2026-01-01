@@ -7,6 +7,7 @@ import ResumeBuilder from './pages/ResumeBuilder'
 import Projects from './pages/Projects'
 import Preview from './pages/Preview'
 import Login from './pages/Login'
+import SubscriptionPage from './pages/SubscriptionPage'
 import ATSCheckerPage from './pages/ATSCheckerPage'
 import ProfilePage from './pages/ProfilePage'
 import TemplatesPage from './pages/TemplatesPage'
@@ -78,6 +79,7 @@ const App = () => {
           <Route path='templates' element={<TemplatesPage />} />
           <Route path='projects' element={<Projects />} />
           <Route path='builder/:resumeId' element={<ResumeBuilder />} />
+          <Route path='subscription' element={<SubscriptionPage />} />
           <Route path='ats-check' element={<ATSCheckerPage />} />
           <Route path='profile' element={<ProfilePage />} />
         </Route>

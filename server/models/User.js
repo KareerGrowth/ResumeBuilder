@@ -9,7 +9,8 @@ const UserSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     otp: { type: String },
     otpExpiresAt: { type: Date },
-    lastLogin: { type: Date }
+    lastLogin: { type: Date },
+    usedDiscounts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discount' }]
 }, { timestamps: true })
 
 UserSchema.methods.comparePassword = function (password) {

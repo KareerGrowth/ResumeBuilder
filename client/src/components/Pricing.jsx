@@ -4,12 +4,33 @@ import api from '../configs/api';
 import toast from 'react-hot-toast';
 import { Check, X, CreditCard, Sparkles, Crown } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import CheckoutModal from './CheckoutModal';
+
+const PLANS = {
+    Pro: {
+        amount: 49900, // ₹499 in paise
+        credits: 5,
+        validityMonths: 3,
+        name: 'Pro Plan'
+    },
+    Ultimate: {
+        amount: 99900, // ₹999 in paise
+        credits: 15,
+        validityMonths: 3,
+        name: 'Ultimate Plan'
+    }
+};
 
 const Pricing = ({ onClose, onSuccess }) => {
     const { user } = useSelector(state => state.auth);
     const [loading, setLoading] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null);
 
-    const handlePayment = async (planType) => {
+    const handleSelectPlan = (planType) => {
+        setSelectedPlan({ ...PLANS[planType], type: planType });
+    };
+
+    const proceedToPayment = async (couponCode) => {
         setLoading(true);
         try {
             const isLoaded = await loadRazorpayScript();
@@ -20,7 +41,10 @@ const Pricing = ({ onClose, onSuccess }) => {
             }
 
             // 1. Create Order on Backend
-            const { data: orderData } = await api.post('/api/payment/create-order', { planType });
+            const { data: orderData } = await api.post('/api/payment/create-order', {
+                planType: selectedPlan.type,
+                discountCode: couponCode // Pass coupon code
+            });
 
             const options = {
                 key: orderData.keyId,
@@ -78,6 +102,7 @@ const Pricing = ({ onClose, onSuccess }) => {
             toast.error(error.response?.data?.message || 'Something went wrong');
         } finally {
             setLoading(false);
+            // Don't close summary yet, wait for user action or success
         }
     };
 
@@ -129,11 +154,11 @@ const Pricing = ({ onClose, onSuccess }) => {
                             ))}
                         </ul>
                         <button
-                            onClick={() => handlePayment('Pro')}
+                            onClick={() => handleSelectPlan('Pro')}
                             disabled={loading}
                             className="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg transition-colors flex items-center justify-center gap-2"
                         >
-                            {loading ? 'Processing...' : 'Get Started'}
+                            Select Plan
                         </button>
                     </div>
 
@@ -162,15 +187,24 @@ const Pricing = ({ onClose, onSuccess }) => {
                             ))}
                         </ul>
                         <button
-                            onClick={() => handlePayment('Ultimate')}
+                            onClick={() => handleSelectPlan('Ultimate')}
                             disabled={loading}
                             className="w-full py-4 px-6 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-lg transition-colors flex items-center justify-center gap-2"
                         >
-                            {loading ? 'Processing...' : 'Get Ultimate'}
+                            Select Plan
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Check out Modal */}
+            {selectedPlan && (
+                <CheckoutModal
+                    plan={selectedPlan}
+                    onClose={() => setSelectedPlan(null)}
+                    onProceed={proceedToPayment}
+                />
+            )}
         </div>
     );
 };
