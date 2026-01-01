@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { logout } from '../app/features/authSlice'
-import { FileText, Layout, Upload, CheckCircle, ChevronDown, User, LogOut, Menu, X, Home } from 'lucide-react'
+import { FileText, Layout, Upload, CheckCircle, ChevronDown, User, LogOut, Menu, X, Home, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
 import api from '../configs/api'
@@ -47,6 +47,7 @@ const Navbar = ({ onOpenUpload }) => {
     { name: 'Home', href: '/app', icon: Home },
     { name: 'Templates', href: '/app/templates', icon: FileText },
     { name: 'Project', href: '/app/projects', icon: Layout },
+    { name: 'Subscription', href: '/app/subscription', icon: Sparkles },
     { name: 'Upload Resume', href: '#upload', icon: Upload },
   ]
 
