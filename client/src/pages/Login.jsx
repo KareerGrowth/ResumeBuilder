@@ -24,6 +24,7 @@ const Login = () => {
         email: '',
         phone: '',
         password: '',
+        newPassword: '',
         otp: ''
     })
 
@@ -62,6 +63,24 @@ const Login = () => {
             }
 
             const { data } = await api.post(`/api/users/${state}`, formData)
+
+            if (state === 'forgot-password') {
+                toast.success(data.message)
+                setState('verify-reset-otp')
+                return
+            }
+
+            if (state === 'verify-reset-otp') {
+                toast.success(data.message)
+                setState('reset-password')
+                return
+            }
+
+            if (state === 'reset-password') {
+                toast.success(data.message)
+                setState('login')
+                return
+            }
 
             if (data.requiresVerification) {
                 setShowOTP(true)
@@ -213,7 +232,7 @@ const Login = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            {showOTP ? (
+                            {showOTP || state === 'verify-reset-otp' ? (
                                 <div className="space-y-5">
                                     <div className="relative group">
                                         <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
@@ -229,16 +248,27 @@ const Login = () => {
                                         />
                                     </div>
                                     <div className="flex justify-between items-center px-2">
+                                        {state !== 'verify-reset-otp' && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowOTP(false)}
+                                                className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
+                                            >
+                                                Change email
+                                            </button>
+                                        )}
+                                        {state === 'verify-reset-otp' && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setState('forgot-password')}
+                                                className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
+                                            >
+                                                Change email
+                                            </button>
+                                        )}
                                         <button
                                             type="button"
-                                            onClick={() => setShowOTP(false)}
-                                            className="text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
-                                        >
-                                            Change email
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleResendOTP}
+                                            onClick={state === 'verify-reset-otp' ? () => { /* Handle resend for reset */ } : handleResendOTP}
                                             disabled={isLoading}
                                             className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors disabled:opacity-50"
                                         >
@@ -248,7 +278,7 @@ const Login = () => {
                                 </div>
                             ) : (
                                 <>
-                                    {state !== "login" && (
+                                    {state === "register" && (
                                         <>
                                             <div className="relative group">
                                                 <User2Icon className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
@@ -277,31 +307,36 @@ const Login = () => {
                                         </>
                                     )}
 
-                                    <div className="relative group">
-                                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            placeholder="Email address"
-                                            className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                    </div>
+                                    {state !== "reset-password" && (
+                                        <div className="relative group">
+                                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                placeholder="Email address"
+                                                className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                required
+                                            />
+                                        </div>
+                                    )}
 
-                                    <div className="relative group">
-                                        <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            placeholder="Password"
-                                            className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                    </div>
+
+                                    {state !== "forgot-password" && (
+                                        <div className="relative group">
+                                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                            <input
+                                                type={state === 'reset-password' ? 'text' : 'password'}
+                                                name={state === 'reset-password' ? 'newPassword' : 'password'}
+                                                placeholder={state === 'reset-password' ? 'New Password' : 'Password'}
+                                                className="w-full bg-white border border-slate-200 rounded-full px-12 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 shadow-sm"
+                                                value={state === 'reset-password' ? formData.newPassword : formData.password}
+                                                onChange={handleChange}
+                                                required
+                                            />
+                                        </div>
+                                    )}
                                 </>
                             )}
 
@@ -316,8 +351,12 @@ const Login = () => {
                                         />
                                         <span className="text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
                                     </label>
-                                    <button type="button" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Forget password?</button>
+                                    <button type="button" onClick={() => setState("forgot-password")} className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Forget password?</button>
                                 </div>
+                            )}
+
+                            {state === "forgot-password" && (
+                                <button type="button" onClick={() => setState("login")} className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors block text-center w-full">Back to Login</button>
                             )}
 
                             <button
@@ -332,24 +371,27 @@ const Login = () => {
                                     </>
                                 ) : (
                                     <>
-                                        {showOTP ? "Verify & Continue" : state === "login" ? "Sign In" : "Create Account"}
+                                        {showOTP ? "Verify & Continue" : state === "login" ? "Sign In" : state === "register" ? "Create Account" : state === "forgot-password" ? "Send OTP" : state === "verify-reset-otp" ? "Verify OTP" : "Reset Password"}
                                         <ArrowRight className="w-5 h-5" />
                                     </>
                                 )}
                             </button>
 
-                            <p className="text-center text-slate-500 text-sm mt-6">
-                                {state === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-                                <span
-                                    onClick={() => setState(prev => prev === "login" ? "register" : "login")}
-                                    className="text-indigo-600 font-bold hover:underline cursor-pointer"
-                                >
-                                    {state === "login" ? "Sign up" : "Log in"}
-                                </span>
-                            </p>
+                            {!["forgot-password", "verify-reset-otp", "reset-password"].includes(state) && (
+                                <p className="text-center text-slate-500 text-sm mt-6">
+                                    {state === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+                                    <span
+                                        onClick={() => setState(prev => prev === "login" ? "register" : "login")}
+                                        className="text-indigo-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                        {state === "login" ? "Sign up" : "Log in"}
+                                    </span>
+                                </p>
+                            )}
                         </form>
                     </motion.div>
                 </div>
+
 
                 {/* Right Side - Floating Image */}
                 <div className="hidden lg:flex w-1/2 items-center justify-center p-12">

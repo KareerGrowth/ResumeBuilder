@@ -10,6 +10,13 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+    // OPTIMIZATIONS FOR RENDER/CLOUD
+    family: 4, // Force IPv4 (Fixes Gmail IPv6 timeouts on cloud)
+    logger: true, // Log SMTP info for debugging
+    debug: true, // Show debug output
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
 });
 
 /**

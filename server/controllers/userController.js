@@ -582,3 +582,107 @@ export const getUserResumes = async (req, res) => {
         return res.status(400).json({ message: error.message })
     }
 }
+// Forgot Password - Send OTP
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Update user with OTP
+        await User.findOneAndUpdate(
+            { email },
+            {
+                otp,
+                otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+            },
+            { upsert: false }
+        );
+
+        await sendOTP(email, otp);
+
+        res.status(200).json({ message: 'OTP sent to your email.' });
+
+    } catch (error) {
+        console.error('Forgot Password error:', error);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+// Verify Reset OTP
+export const verifyResetOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({ message: 'Email and OTP are required' });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+
+        if (new Date() > user.otpExpiresAt) {
+            return res.status(400).json({ message: 'OTP has expired' });
+        }
+
+        return res.status(200).json({ message: 'OTP verified successfully' });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+// Reset Password
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify OTP again for security
+        if (user.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid or expired session. Please try again.' });
+        }
+
+        if (new Date() > user.otpExpiresAt) {
+            return res.status(400).json({ message: 'Session expired. Please try again.' });
+        }
+
+        // Update Password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await User.findOneAndUpdate(
+            { email },
+            {
+                password: hashedPassword,
+                $unset: { otp: 1, otpExpiresAt: 1 }
+            }
+        );
+
+        res.status(200).json({ message: 'Password reset successfully. You can now login.' });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
