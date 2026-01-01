@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Menu, X, ArrowRight, Search, FileText, Sparkles, MessageSquare, DollarSign, Layout, User, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProfileLogo from '../../assets/Profilet-Ai.png';
 
 const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const user = null; // Replace with actual user state from context/store
+    const { user } = useSelector(state => state.auth);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -31,18 +33,16 @@ const Navbar = () => {
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.5 }}
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${scrolled ? 'bg-white/80 backdrop-blur-md border-slate-200/50 py-3 shadow-sm' : 'bg-white/5 backdrop-blur-sm border-transparent py-5'
-                    }`}
+                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b bg-white border-slate-200/50 py-3 shadow-sm`}
             >
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                            <FileText className="w-5 h-5" />
-                        </div>
-                        <span className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
-                            ResumeBuilder
-                        </span>
+                        <img
+                            src={ProfileLogo}
+                            alt="Profilite-AI"
+                            className="h-10 w-auto transition-transform group-hover:scale-105"
+                        />
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -80,7 +80,7 @@ const Navbar = () => {
                                     Login
                                 </Link>
                                 <Link
-                                    to="/app?state=register"
+                                    to="/app?state=login"
                                     className="group px-5 py-2.5 rounded-full bg-slate-900 text-white text-sm font-medium hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-1.5"
                                 >
                                     Get Started
@@ -195,7 +195,7 @@ const Navbar = () => {
                                         </Link>
 
                                         <Link
-                                            to="/app?state=register"
+                                            to="/app?state=login"
                                             className="flex items-center justify-between px-4 py-3.5 text-base font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all group mt-2"
                                             onClick={() => setMobileMenuOpen(false)}
                                         >

@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/home/Navbar';
 import Hero from '../components/home/Hero';
+import TemplatesSection from '../components/home/TemplatesSection';
 import Features from '../components/home/Features';
 import Testimonial from '../components/home/Testimonial';
 import Pricing from '../components/home/Pricing';
@@ -13,6 +14,7 @@ const Home = () => {
       <Navbar />
       <main className="flex-grow">
         <Hero />
+        <TemplatesSection />
         <Features />
         <Testimonial />
         <Pricing />
