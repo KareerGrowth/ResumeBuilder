@@ -570,10 +570,10 @@ export const getUserResumes = async (req, res) => {
 
         if (source === 'mysql') {
             // MySQL users - find resumes by email
-            resumes = await Resume.find({ userEmail: req.userEmail });
+            resumes = await Resume.find({ userEmail: req.userEmail }).sort({ updatedAt: -1 });
         } else {
             // MongoDB users - find by userId
-            resumes = await Resume.find({ userId });
+            resumes = await Resume.find({ userId }).sort({ updatedAt: -1 });
         }
 
         return res.status(200).json({ resumes });
