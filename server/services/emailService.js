@@ -7,8 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configure ZeptoMail Client
-const url = "https://api.zeptomail.in/v1.1/email";
-const token = "Zoho-enczapikey PHtE6r0OQ7zqizMm90IA7PS6RcOtYIl/qetgeVNE5t0XDvEKS01Xr48omzC2/U0pVqRDHf+byIprteybsb/RdD7kMT1KVWqyqK3sx/VYSPOZsbq6x00csF0bf03aU4Xvctdv0i3QvNfaNA==";
+const url = process.env.ZEPTOMAIL_URL;
+const token = process.env.ZEPTOMAIL_TOKEN;
 
 let client = new SendMailClient({ url, token });
 
@@ -37,7 +37,7 @@ export const sendOTP = async (email, otp) => {
             "from":
             {
                 "address": "noreply@systemmindz.com",
-                "name": "Profilet-ai"
+                "name": "Profilet - ai"
             },
             "to":
                 [
@@ -50,7 +50,7 @@ export const sendOTP = async (email, otp) => {
                         }
                     }
                 ],
-            "subject": "Email Verification OTP - Profilet-ai",
+            "subject": "Email Verification OTP - Profilet - ai",
             "htmlbody": `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
                     <div style="text-align: center; margin-bottom: 20px;">
